@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, PlayCircle } from 'lucide-react';
+import { ArrowLeft, Search, PlayCircle, Video } from 'lucide-react';
 
 
 

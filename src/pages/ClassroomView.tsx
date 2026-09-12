@@ -33,12 +33,13 @@ const ClassroomView: React.FC = () => {
     const videoUrl = URL.createObjectURL(file);
     
     // Generate a dummy transcript dynamically scaled to the video duration
-    const step = Math.max(1, duration / 4);
+    const safeDuration = (duration && !isNaN(duration) && duration > 0) ? duration : 45;
+    const step = Math.max(1, safeDuration / 4);
     const mockTranscript = [
       { start: 0, end: step, text: `Welcome to ${title}. Let's get started with today's topic.` },
       { start: step, end: step * 2, text: `In this lecture, we'll be covering some fundamental concepts that are crucial for understanding the broader subject matter.` },
       { start: step * 2, end: step * 3, text: `As you watch this video, notice how the AI has automatically transcribed the audio and synchronized it with the video playback.` },
-      { start: step * 3, end: duration, text: `This makes it incredibly easy for students to search for specific topics and jump exactly to the moment they need to review.` }
+      { start: step * 3, end: safeDuration, text: `This makes it incredibly easy for students to search for specific topics and jump exactly to the moment they need to review.` }
     ];
 
     const newLecture = {

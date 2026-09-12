@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -11,12 +10,12 @@ const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
+  const handleTestLogin = async () => {
+    setLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/auth/google`, {
-        token: credentialResponse.credential,
-      });
+      const res = await axios.post(`${API_URL}/auth/test-login`, {});
       
       const { user, token } = res.data;
       login(user, token);
@@ -30,6 +29,8 @@ const Login: React.FC = () => {
       console.error('Login error', err);
       const errorMessage = err.response?.data?.message || err.message || 'Authentication failed. Please try again.';
       setError(`Error: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,24 +56,13 @@ const Login: React.FC = () => {
           </div>
         )}
 
-        <div className="w-full flex justify-center hover:scale-[1.02] transition-transform">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => setError('Google login failed.')}
-            theme="filled_blue"
-            shape="pill"
-            size="large"
-            text="continue_with"
-          />
-        </div>
-        
-        <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-xl w-full text-center">
-          <p className="text-xs text-gray-500 font-semibold mb-1">HAVING GOOGLE ERRORS?</p>
-          <p className="text-xs text-gray-400 mb-2">Copy this exact URL and paste it into Google Cloud's "Authorized JavaScript origins":</p>
-          <code className="text-xs font-mono bg-white px-2 py-1 border rounded text-primary block break-all">
-            {window.location.origin}
-          </code>
-        </div>
+        <button 
+          onClick={handleTestLogin}
+          disabled={loading}
+          className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform hover:scale-[1.02] disabled:opacity-50"
+        >
+          {loading ? 'Logging in...' : 'Instant Test Login'}
+        </button>
       </div>
       
       <p className="mt-6 text-sm text-gray-400">

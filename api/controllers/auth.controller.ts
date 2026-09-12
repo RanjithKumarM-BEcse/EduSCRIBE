@@ -85,3 +85,57 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
     res.status(500).json({ message: error.message || 'Internal server error' });
   }
 };
+
+export const testLogin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = "test_user_123";
+    const email = "test@eduscribe.com";
+    const name = "Test User";
+    const avatar = "https://ui-avatars.com/api/?name=Test+User&background=6C47FF&color=fff";
+
+    const getResult = await db.send(new GetCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        PK: `USER#${userId}`,
+        SK: 'PROFILE'
+      }
+    }));
+
+    let userRole = 'staff'; 
+    let isNewUser = false;
+
+    if (!getResult.Item) {
+      isNewUser = true;
+      await db.send(new PutCommand({
+        TableName: TABLE_NAME,
+        Item: {
+          PK: `USER#${userId}`,
+          SK: 'PROFILE',
+          id: userId,
+          email,
+          name,
+          avatar,
+          role: null
+        }
+      }));
+      userRole = 'student'; // Force role selection
+    } else {
+      userRole = getResult.Item.role;
+    }
+
+    const jwtToken = jwt.sign(
+      { id: userId, email, role: userRole },
+      process.env.JWT_SECRET || 'secret',
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      token: jwtToken,
+      user: { id: userId, email, name, avatar, role: userRole },
+      isNewUser
+    });
+  } catch (error: any) {
+    console.error('Test login error:', error);
+    res.status(500).json({ message: error.message || 'Internal server error' });
+  }
+};

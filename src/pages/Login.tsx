@@ -16,9 +16,10 @@ const Login: React.FC = () => {
     setLoading(true);
     // Bypass the backend completely to avoid AWS errors
     setTimeout(() => {
+      const randomId = Math.floor(Math.random() * 10000);
       const mockUser = {
-        id: 'demo_user_001',
-        email: 'demo@eduscribe.com',
+        id: `demo_user_${randomId}`,
+        email: `demo${randomId}@eduscribe.com`,
         name: 'Demo User',
         avatar: 'https://ui-avatars.com/api/?name=Demo+User&background=6C47FF&color=fff',
         role: null as any

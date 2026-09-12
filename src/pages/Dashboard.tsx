@@ -15,15 +15,46 @@ const Dashboard: React.FC = () => {
 
   const isStaff = user?.role === 'staff';
 
-  const [classes, setClasses] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>(() => {
+    // Load this specific user's joined/created classes on mount
+    if (!user) return [];
+    const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
+    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+    return allSaved.filter((c: any) => myClassIds.includes(c.roomCode));
+  });
 
   const handleCreateClass = (data: any) => {
-    setClasses([...classes, { id: Math.random().toString(), students: 0, lectures: 0, ...data }]);
+    const newClass = { id: Math.random().toString(), students: 0, lectures: 0, ...data };
+    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+    
+    // Save to global DB
+    localStorage.setItem('eduscribe_all_classes', JSON.stringify([...allSaved, newClass]));
+    
+    // Save to user's list
+    if (user) {
+      const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
+      localStorage.setItem(`eduscribe_my_classes_${user.id}`, JSON.stringify([...myClassIds, newClass.roomCode]));
+    }
+    
+    setClasses([...classes, newClass]);
   };
 
   const handleJoinClass = (code: string) => {
-    // Navigate directly to the class
-    navigate(`/classroom/${code}`);
+    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+    const foundClass = allSaved.find((c: any) => c.roomCode === code);
+    
+    if (foundClass) {
+      const alreadyJoined = classes.find((c) => c.roomCode === code);
+      if (!alreadyJoined && user) {
+        // Add to user's list
+        const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
+        localStorage.setItem(`eduscribe_my_classes_${user.id}`, JSON.stringify([...myClassIds, code]));
+        setClasses([...classes, foundClass]);
+      }
+      navigate(`/classroom/${code}`);
+    } else {
+      alert(`Room code ${code} not found! Ask your teacher for the correct code.`);
+    }
   };
 
   return (
@@ -91,7 +122,7 @@ const Dashboard: React.FC = () => {
           {classes.map((cls) => (
             <div 
               key={cls.id} 
-              onClick={() => navigate(`/classroom/${cls.code}`)}
+              onClick={() => navigate(`/classroom/${cls.roomCode}`)}
               className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-soft transition-all border border-gray-100 hover:border-primary/20 cursor-pointer group hover:-translate-y-1"
             >
               <div className="flex justify-between items-start mb-4">
@@ -99,11 +130,11 @@ const Dashboard: React.FC = () => {
                   <Video className="w-6 h-6" />
                 </div>
                 <span className="bg-gray-50 border border-gray-100 text-gray-600 text-xs font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider">
-                  {cls.code}
+                  {cls.roomCode}
                 </span>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors">{cls.name}</h3>
-              <p className="text-sm text-gray-500 mb-6 font-medium">Instructor: {user?.name}</p>
+              <p className="text-sm text-gray-500 mb-6 font-medium">Instructor: {cls.instructorName || user?.name}</p>
               
               <div className="flex items-center space-x-4 border-t border-gray-50 pt-4">
                 <div className="flex items-center text-sm font-bold text-gray-400 group-hover:text-gray-600 transition-colors">

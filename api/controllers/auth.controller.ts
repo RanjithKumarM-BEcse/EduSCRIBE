@@ -136,6 +136,6 @@ export const testLogin = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error: any) {
     console.error('Test login error:', error);
-    res.status(500).json({ message: error.message || 'Internal server error' });
+    res.status(500).json({ message: 'AWS DynamoDB Error: ' + error.toString() });
   }
 };

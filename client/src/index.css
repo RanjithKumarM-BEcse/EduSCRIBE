@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-purple-600: #6C47FF;
+  --color-coral-pink: #FF5B84;
+  --color-lavender-white: #FAF9FF;
+  
+  --color-primary: #6C47FF;
+  --color-secondary: #FF5B84;
+  --color-background: #FAF9FF;
+
+  --shadow-soft: 0 10px 30px -5px rgba(108, 71, 255, 0.08);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: #111827;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  }
+}

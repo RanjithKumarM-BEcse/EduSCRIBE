@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import RoleSelection from './pages/RoleSelection';
 import Dashboard from './pages/Dashboard';
+import ClassroomView from './pages/ClassroomView';
+import LectureViewer from './pages/LectureViewer';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
@@ -28,11 +30,15 @@ const App: React.FC = () => {
           />
           <Route 
             path="/dashboard" 
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            } 
+            element={<PrivateRoute><Dashboard /></PrivateRoute>} 
+          />
+          <Route 
+            path="/classroom/:roomCode" 
+            element={<PrivateRoute><ClassroomView /></PrivateRoute>} 
+          />
+          <Route 
+            path="/classroom/:roomCode/lecture/:lectureId" 
+            element={<PrivateRoute><LectureViewer /></PrivateRoute>} 
           />
         </Routes>
       </BrowserRouter>

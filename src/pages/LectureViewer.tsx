@@ -140,31 +140,33 @@ const LectureViewer: React.FC = () => {
         // MOCK SEMANTIC SEARCH FOR DEMOS WITHOUT API KEY
         setTimeout(() => {
            const query = searchQuery.toLowerCase();
-           const matchTimes: number[] = [];
+           const matchIndexes: number[] = [];
            
            // Simple mock semantic engine based on keywords
-           transcriptList.forEach((t: any) => {
+           transcriptList.forEach((t: any, idx: number) => {
              const text = t.text.toLowerCase();
              // Simulate AI understanding meaning instead of exact words
              if (
                (query.includes('math') && text.includes('formula')) ||
                (query.includes('hello') && text.includes('welcome')) ||
                (query.includes('important') && text.includes('crucial')) ||
+               (query.includes('save') && text.includes('data')) ||
+               (query.includes('data') && text.includes('save')) ||
                (query.includes('find') && text.includes('search'))
              ) {
-                matchTimes.push(t.start);
+                matchIndexes.push(idx);
              } else if (text.includes(query)) {
-                matchTimes.push(t.start);
+                matchIndexes.push(idx);
              }
            });
 
-           if (matchTimes.length > 0) {
-              setSemanticResults(matchTimes);
-              handleTranscriptClick(matchTimes[0]); // Instantly jump!
+           if (matchIndexes.length > 0) {
+              setSemanticResults(matchIndexes);
+              handleTranscriptClick(transcriptList[matchIndexes[0]].start); // Instantly jump!
               
               // Scroll to the transcript block
               setTimeout(() => {
-                const el = document.getElementById(`transcript-block-${matchTimes[0]}`);
+                const el = document.getElementById(`transcript-block-${matchIndexes[0]}`);
                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }, 100);
            } else {
@@ -176,7 +178,7 @@ const LectureViewer: React.FC = () => {
       }
 
       try {
-        const transcriptText = transcriptList.map((t: any) => `[START:${t.start}] ${t.text}`).join('\n');
+        const transcriptText = transcriptList.map((t: any, idx: number) => `[ID:${idx}] ${t.text}`).join('\n');
         
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
@@ -189,7 +191,7 @@ const LectureViewer: React.FC = () => {
             messages: [
               {
                 role: 'system',
-                content: 'You are a semantic search engine. You are given a transcript with [START:timestamp] tags. Find ALL segments that semantically match or answer the user\'s query. Return ONLY a comma-separated list of the START timestamps (e.g. "12.5, 45.0"). If none match, return "NONE". Do not include any other text.'
+                content: 'You are a semantic search engine. You are given a transcript with [ID:index] tags. Find ALL segments that semantically match or answer the user\'s query. Return ONLY a comma-separated list of the IDs (e.g. "0, 2"). If none match, return "NONE". Do not include any other text.'
               },
               {
                 role: 'user',
@@ -209,14 +211,15 @@ const LectureViewer: React.FC = () => {
         if (content === 'NONE') {
           setSemanticResults([-1]); // denotes no results
         } else {
-          const times = content.match(/\d+(\.\d+)?/g)?.map(Number) || [];
-          if (times.length > 0) {
-            setSemanticResults(times);
-            handleTranscriptClick(times[0]); // Instantly jump!
+          const indexes = content.match(/\d+/g)?.map(Number) || [];
+          const validIndexes = indexes.filter((i: number) => i >= 0 && i < transcriptList.length);
+          if (validIndexes.length > 0) {
+            setSemanticResults(validIndexes);
+            handleTranscriptClick(transcriptList[validIndexes[0]].start); // Instantly jump!
             
             // Scroll to the transcript block
             setTimeout(() => {
-              const el = document.getElementById(`transcript-block-${times[0]}`);
+              const el = document.getElementById(`transcript-block-${validIndexes[0]}`);
               if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 100);
           } else {
@@ -330,12 +333,13 @@ const LectureViewer: React.FC = () => {
               const isActive = currentTime >= item.start && currentTime < item.end;
               const isEditing = editingIndex === originalIndex;
               
-              const isSemanticMatch = searchMode === 'semantic' && semanticResults.includes(item.start);
+              // We use originalIndex because the semantic search uses array indexes
+              const isSemanticMatch = searchMode === 'semantic' && originalIndex !== -1 && semanticResults.includes(originalIndex);
 
               return (
                 <div 
                   key={idx}
-                  id={`transcript-block-${item.start}`}
+                  id={`transcript-block-${originalIndex}`}
                   className={`p-3 rounded-xl transition-all border-l-4 group ${
                     isActive 
                       ? 'bg-purple-50 border-primary shadow-sm' 

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { Video, Users, Plus, LogOut, PlayCircle } from 'lucide-react';
 import CreateClassModal from '../components/CreateClassModal';
 import JoinClassModal from '../components/JoinClassModal';
@@ -15,45 +16,54 @@ const Dashboard: React.FC = () => {
 
   const isStaff = user?.role === 'staff';
 
-  const [classes, setClasses] = useState<any[]>(() => {
-    // Load this specific user's joined/created classes on mount
-    if (!user) return [];
-    const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
-    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
-    return allSaved.filter((c: any) => myClassIds.includes(c.roomCode));
-  });
+  const [classes, setClasses] = useState<any[]>([]);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-  const handleCreateClass = (data: any) => {
-    const newClass = { id: Math.random().toString(), students: 0, lectures: 0, ...data };
-    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/rooms`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        setClasses(res.data.rooms || []);
+      } catch (err) {
+        console.error('Failed to fetch rooms', err);
+      }
+    };
+    if (user) fetchRooms();
+
+    // Check for pending join
+    const urlParams = new URLSearchParams(window.location.search);
+    const joinCode = urlParams.get('join');
+    const pendingCode = localStorage.getItem('pending_join_code');
     
-    // Save to global DB
-    localStorage.setItem('eduscribe_all_classes', JSON.stringify([...allSaved, newClass]));
-    
-    // Save to user's list
-    if (user) {
-      const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
-      localStorage.setItem(`eduscribe_my_classes_${user.id}`, JSON.stringify([...myClassIds, newClass.roomCode]));
+    if (joinCode || pendingCode) {
+      setIsJoinOpen(true);
+      // Clean up local storage
+      if (pendingCode) localStorage.removeItem('pending_join_code');
     }
-    
-    setClasses([...classes, newClass]);
+  }, [user]);
+
+  const handleCreateClass = async (data: any) => {
+    try {
+      const res = await axios.post(`${API_URL}/rooms`, data, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      // Add the new room to local state instantly
+      setClasses([...classes, { ...res.data, studentsCount: 0, lecturesCount: 0 }]);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to create class');
+    }
   };
 
-  const handleJoinClass = (code: string) => {
-    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
-    const foundClass = allSaved.find((c: any) => c.roomCode === code);
-    
-    if (foundClass) {
-      const alreadyJoined = classes.find((c) => c.roomCode === code);
-      if (!alreadyJoined && user) {
-        // Add to user's list
-        const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
-        localStorage.setItem(`eduscribe_my_classes_${user.id}`, JSON.stringify([...myClassIds, code]));
-        setClasses([...classes, foundClass]);
-      }
+  const handleJoinClass = async (code: string, password?: string) => {
+    try {
+      const res = await axios.post(`${API_URL}/rooms/join`, { roomCode: code, password }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
       navigate(`/classroom/${code}`);
-    } else {
-      alert(`Room code ${code} not found! Ask your teacher for the correct code.`);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to join class');
     }
   };
 

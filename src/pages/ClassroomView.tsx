@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 import { PlayCircle, Upload, ArrowLeft, Video, Clock } from 'lucide-react';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const ClassroomView: React.FC = () => {
   const { roomCode } = useParams<{ roomCode: string }>();
@@ -10,6 +13,24 @@ const ClassroomView: React.FC = () => {
   const isStaff = user?.role === 'staff';
 
   const [lectures, setLectures] = useState<any[]>([]);
+  const [roomData, setRoomData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchRoom = async () => {
+      try {
+        // We'll fetch from the global rooms list we built in the Dashboard
+        // Ideally there's a GET /api/rooms/:roomCode but we can use the /rooms list
+        const res = await axios.get(`${API_URL}/rooms`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        const room = res.data.rooms.find((r: any) => r.roomCode === roomCode);
+        if (room) setRoomData(room);
+      } catch (err) {
+        console.error('Failed to fetch room data', err);
+      }
+    };
+    fetchRoom();
+  }, [roomCode]);
 
   const handleUpload = () => {
     // Mock upload for now
@@ -18,6 +39,11 @@ const ClassroomView: React.FC = () => {
 
   const handleViewLecture = (id: string) => {
     navigate(`/classroom/${roomCode}/lecture/${id}`);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('Copied to clipboard!');
   };
 
   return (
@@ -33,9 +59,29 @@ const ClassroomView: React.FC = () => {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Classroom</h1>
+              <h1 className="text-xl font-bold text-gray-900">{roomData?.name || 'Classroom'}</h1>
               <div className="flex items-center text-xs text-gray-500 space-x-2 mt-0.5">
-                <span className="font-bold text-primary bg-purple-50 px-2 py-0.5 rounded">Room: {roomCode}</span>
+                <span 
+                  onClick={() => copyToClipboard(roomCode || '')}
+                  className="font-bold text-primary bg-purple-50 px-2 py-0.5 rounded cursor-pointer hover:bg-purple-100 transition-colors"
+                  title="Click to copy room code"
+                >
+                  Room: {roomCode}
+                </span>
+                <span>•</span>
+                <span 
+                  onClick={() => copyToClipboard(`${window.location.origin}/classroom/${roomCode}`)}
+                  className="font-semibold text-secondary cursor-pointer hover:underline"
+                  title="Click to copy invite link"
+                >
+                  Copy Invite Link
+                </span>
+                {roomData?.instructorName && (
+                  <>
+                    <span>•</span>
+                    <span>Instructor: {roomData.instructorName}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>

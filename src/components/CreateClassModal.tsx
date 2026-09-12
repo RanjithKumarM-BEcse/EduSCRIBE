@@ -12,24 +12,26 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({ isOpen, onClose, on
   const { user } = useAuth();
   const [className, setClassName] = useState('');
   const [isPublic, setIsPublic] = useState(true);
+  const [password, setPassword] = useState('');
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!className.trim()) return;
-    
-    // Generate a random 6-character room code
-    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    if (!isPublic && !password.trim()) {
+      alert("Please enter a password for the private room");
+      return;
+    }
     
     onCreate({
       name: className,
-      instructorName: user?.name,
       isPublic,
-      roomCode
+      password: isPublic ? undefined : password
     });
     
     setClassName('');
+    setPassword('');
     onClose();
   };
 
@@ -56,7 +58,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({ isOpen, onClose, on
             />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-5">
             <label className="block text-sm font-bold text-gray-700 mb-2">Taken by (Instructor)</label>
             <input 
               type="text" 
@@ -89,6 +91,19 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({ isOpen, onClose, on
                 <span className="text-xs text-center mt-1 opacity-70">Requires your approval to join</span>
               </button>
             </div>
+            
+            {!isPublic && (
+              <div className="mt-4 animate-in fade-in slide-in-from-top-2">
+                <input 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter a room password" 
+                  className="w-full px-4 py-3 rounded-xl border border-secondary focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
+                  required
+                />
+              </div>
+            )}
           </div>
 
           <button 

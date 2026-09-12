@@ -6,6 +6,7 @@ import RoleSelection from './pages/RoleSelection';
 import Dashboard from './pages/Dashboard';
 import ClassroomView from './pages/ClassroomView';
 import LectureViewer from './pages/LectureViewer';
+import JoinLinkRedirect from './pages/JoinLinkRedirect';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
@@ -31,6 +32,10 @@ const App: React.FC = () => {
           <Route 
             path="/dashboard" 
             element={<PrivateRoute><Dashboard /></PrivateRoute>} 
+          />
+          <Route 
+            path="/join/:roomCode" 
+            element={<JoinLinkRedirect />} 
           />
           <Route 
             path="/classroom/:roomCode" 

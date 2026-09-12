@@ -10,10 +10,14 @@ app.use(cors());
 app.use(express.json());
 
 import authRoutes from './routes/auth.routes';
+import roomsRoutes from './routes/rooms.routes';
 
 // Mount routes. Vercel sometimes strips the /api prefix depending on the rewrite rule.
 app.use('/api/auth', authRoutes);
 app.use('/auth', authRoutes);
+
+app.use('/api/rooms', roomsRoutes);
+app.use('/rooms', roomsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend is running!' });

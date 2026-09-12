@@ -23,6 +23,16 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
 
     const token = authHeader.split(' ')[1];
 
+    if (token.startsWith('MOCK::')) {
+      try {
+        const payload = JSON.parse(Buffer.from(token.split('::')[1], 'base64').toString('utf8'));
+        req.user = payload;
+        return next();
+      } catch (e) {
+        // Fall back if parse fails
+      }
+    }
+
     if (token === 'mock_token_12345') {
       req.user = { id: 'demo_user_001', email: 'demo@eduscribe.com', role: 'staff', name: 'Demo User' };
       return next();

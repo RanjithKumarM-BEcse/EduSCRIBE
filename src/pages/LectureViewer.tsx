@@ -36,9 +36,20 @@ const LectureViewer: React.FC = () => {
   }, [lecture]); // depend on lecture so it runs after video is rendered
 
   const handleTranscriptClick = (start: number) => {
+    setCurrentTime(start); // Instantly highlight the clicked block
+
     if (videoRef.current) {
-      videoRef.current.currentTime = start;
-      videoRef.current.play().catch(() => {}); // ignore autoplay errors
+      // If the video is shorter than the transcript timestamp, don't break
+      if (videoRef.current.duration && start > videoRef.current.duration) {
+        // Just let it jump to the end of the video
+      }
+      
+      try {
+        videoRef.current.currentTime = start;
+        videoRef.current.play().catch(() => {}); // ignore autoplay errors
+      } catch (e) {
+        // ignore DOM exceptions if video is broken
+      }
     }
   };
 

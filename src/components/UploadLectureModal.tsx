@@ -4,7 +4,7 @@ import { X, UploadCloud, Video, CheckCircle2 } from 'lucide-react';
 interface UploadLectureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (title: string, file: File) => void;
+  onUpload: (title: string, file: File, duration: number) => void;
 }
 
 const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose, onUpload }) => {
@@ -51,7 +51,21 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
         setStatusText('Complete!');
         
         setTimeout(() => {
-          onUpload(title, file);
+          // Get video duration to generate accurate transcript
+          const videoUrl = URL.createObjectURL(file);
+          const tempVideo = document.createElement('video');
+          tempVideo.src = videoUrl;
+          tempVideo.onloadedmetadata = () => {
+             onUpload(title, file, tempVideo.duration);
+             URL.revokeObjectURL(videoUrl);
+          };
+          // Fallback if metadata fails to load quickly
+          setTimeout(() => {
+             if (tempVideo.readyState === 0) {
+                onUpload(title, file, 45); // default to 45s
+             }
+          }, 500);
+          
           setIsUploading(false);
           setProgress(0);
           setFile(null);

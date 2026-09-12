@@ -4,7 +4,7 @@ import { X, UploadCloud, Video, CheckCircle2 } from 'lucide-react';
 interface UploadLectureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (title: string, file: File, duration: number) => void;
+  onUpload: (title: string, file: File, duration: number, transcript: any[]) => void;
 }
 
 const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose, onUpload }) => {
@@ -14,6 +14,7 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [apiKey, setApiKey] = useState(localStorage.getItem('groq_api_key') || '');
 
   if (!isOpen) return null;
 
@@ -21,61 +22,126 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
       if (!title) {
-        // Auto-fill title from filename, removing extension
         setTitle(e.target.files[0].name.replace(/\.[^/.]+$/, ""));
       }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const generateMockTranscript = (title: string, duration: number) => {
+    const safeDuration = (duration && !isNaN(duration) && duration > 0) ? duration : 45;
+    const step = Math.max(1, safeDuration / 4);
+    return [
+      { start: 0, end: step, text: `Welcome to ${title}. Let's get started with today's topic.` },
+      { start: step, end: step * 2, text: `In this lecture, we'll be covering some fundamental concepts that are crucial for understanding the broader subject matter.` },
+      { start: step * 2, end: step * 3, text: `As you watch this video, notice how the AI has automatically transcribed the audio and synchronized it with the video playback.` },
+      { start: step * 3, end: safeDuration, text: `This makes it incredibly easy for students to search for specific topics and jump exactly to the moment they need to review.` }
+    ];
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !file) return;
 
+    if (apiKey) localStorage.setItem('groq_api_key', apiKey);
+
     setIsUploading(true);
-    setStatusText('Uploading video securely...');
+    setProgress(10);
+    setStatusText('Processing video...');
     
-    // Simulate upload and AI processing
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += Math.random() * 15;
+    try {
+      let finalTranscript;
       
-      if (currentProgress > 40 && currentProgress < 70) {
-        setStatusText('Transcribing audio with Groq Whisper AI...');
-      } else if (currentProgress >= 70 && currentProgress < 95) {
-        setStatusText('Synchronizing timestamps...');
-      }
-      
-      if (currentProgress >= 100) {
-        currentProgress = 100;
-        clearInterval(interval);
-        setStatusText('Complete!');
+      if (apiKey) {
+        setStatusText('Uploading to Groq Whisper AI (this may take a minute)...');
+        setProgress(30);
         
-        setTimeout(() => {
-          // Get video duration to generate accurate transcript
-          const videoUrl = URL.createObjectURL(file);
-          const tempVideo = document.createElement('video');
-          tempVideo.src = videoUrl;
-          tempVideo.onloadedmetadata = () => {
-             onUpload(title, file, tempVideo.duration);
-             URL.revokeObjectURL(videoUrl);
-          };
-          // Fallback if metadata fails to load quickly
-          setTimeout(() => {
-             if (tempVideo.readyState === 0) {
-                onUpload(title, file, 45); // default to 45s
-             }
-          }, 500);
-          
-          setIsUploading(false);
-          setProgress(0);
-          setFile(null);
-          setTitle('');
-          onClose();
-        }, 800);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('model', 'whisper-large-v3');
+        formData.append('response_format', 'verbose_json');
+
+        const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: formData
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error?.message || 'Failed to transcribe with Groq');
+        }
+
+        setProgress(80);
+        setStatusText('Processing AI response...');
+        const data = await res.json();
+        
+        if (data.segments && data.segments.length > 0) {
+          finalTranscript = data.segments.map((seg: any) => ({
+            start: seg.start,
+            end: seg.end,
+            text: seg.text.trim()
+          }));
+        } else {
+          throw new Error("No speech detected or empty response from Groq.");
+        }
       }
-      
-      setProgress(Math.min(currentProgress, 100));
-    }, 400);
+
+      setProgress(95);
+      setStatusText('Synchronizing timestamps...');
+
+      // Get video duration to generate accurate transcript if Groq fails or is not used
+      const videoUrl = URL.createObjectURL(file);
+      const tempVideo = document.createElement('video');
+      tempVideo.src = videoUrl;
+      tempVideo.onloadedmetadata = () => {
+         const duration = tempVideo.duration;
+         
+         setProgress(100);
+         setStatusText('Complete!');
+         
+         setTimeout(() => {
+           onUpload(title, file, duration, finalTranscript || generateMockTranscript(title, duration));
+           URL.revokeObjectURL(videoUrl);
+           setIsUploading(false);
+           setProgress(0);
+           setFile(null);
+           setTitle('');
+           onClose();
+         }, 800);
+      };
+
+      // Fallback if metadata fails to load quickly
+      setTimeout(() => {
+         if (tempVideo.readyState === 0) {
+            setProgress(100);
+            setStatusText('Complete!');
+            setTimeout(() => {
+              onUpload(title, file, 45, finalTranscript || generateMockTranscript(title, 45));
+              setIsUploading(false);
+              setProgress(0);
+              setFile(null);
+              setTitle('');
+              onClose();
+            }, 800);
+         }
+      }, 1000);
+
+    } catch (err: any) {
+      alert(`Groq AI Error: ${err.message}\n\nFalling back to mock transcript.`);
+      // Proceed with mock transcript
+      setProgress(100);
+      setStatusText('Complete (using mock)!');
+      setTimeout(() => {
+        onUpload(title, file, 45, generateMockTranscript(title, 45));
+        setIsUploading(false);
+        setProgress(0);
+        setFile(null);
+        setTitle('');
+        onClose();
+      }, 800);
+    }
   };
 
   return (
@@ -149,9 +215,18 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
                 )}
               </div>
               
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-6 text-xs text-blue-800 flex items-start">
-                 <div className="shrink-0 mr-2 mt-0.5">ℹ️</div>
-                 <p><b>Demo Mode:</b> Video uploads are stored entirely in your browser's local memory to prevent server errors. They will disappear if you refresh the page, but transcripts will persist.</p>
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-6 text-xs text-blue-800 flex items-start flex-col">
+                 <div className="flex mb-2">
+                   <div className="shrink-0 mr-2 mt-0.5">ℹ️</div>
+                   <p><b>Optional:</b> Enter a Groq API Key to generate real AI transcripts using Whisper-large-v3. Otherwise, a mock transcript will be used.</p>
+                 </div>
+                 <input
+                   type="password"
+                   placeholder="gsk_..."
+                   value={apiKey}
+                   onChange={(e) => setApiKey(e.target.value)}
+                   className="w-full px-3 py-2 mt-1 rounded border border-blue-200 outline-none focus:border-blue-400"
+                 />
               </div>
 
               <button 

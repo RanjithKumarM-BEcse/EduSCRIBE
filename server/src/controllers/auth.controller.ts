@@ -80,8 +80,8 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
       },
       isNewUser
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Google login error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: error.message || 'Internal server error' });
   }
 };

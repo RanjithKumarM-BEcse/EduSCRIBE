@@ -26,9 +26,10 @@ const Login: React.FC = () => {
       } else {
         navigate('/dashboard');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error', err);
-      setError('Authentication failed. Please try again.');
+      const errorMessage = err.response?.data?.message || err.message || 'Authentication failed. Please try again.';
+      setError(`Error: ${errorMessage}`);
     }
   };
 

@@ -4,12 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { Video, Users, Plus, LogOut, PlayCircle } from 'lucide-react';
 import CreateClassModal from '../components/CreateClassModal';
 import JoinClassModal from '../components/JoinClassModal';
+import ProfileModal from '../components/ProfileModal';
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const isStaff = user?.role === 'staff';
 
@@ -28,6 +30,7 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-background">
       <CreateClassModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} onCreate={handleCreateClass} />
       <JoinClassModal isOpen={isJoinOpen} onClose={() => setIsJoinOpen(false)} onJoin={handleJoinClass} />
+      <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
       
       {/* Navbar */}
       <nav className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-40">
@@ -40,11 +43,20 @@ const Dashboard: React.FC = () => {
               <span className="font-extrabold text-2xl text-gray-900 tracking-tight">eduScribe</span>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+              <div 
+                onClick={() => setIsProfileOpen(true)}
+                className="flex items-center space-x-3 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors"
+                title="Edit Profile"
+              >
                 <img src={user?.avatar} alt="avatar" className="w-8 h-8 rounded-full border-2 border-primary/20" />
-                <span className="text-sm font-bold text-gray-700 hidden sm:block pr-2">{user?.name}</span>
+                <div className="hidden sm:flex flex-col pr-2">
+                  <span className="text-sm font-bold text-gray-700 leading-tight">{user?.name}</span>
+                  {user?.organization && (
+                    <span className="text-[10px] font-semibold text-primary/70 uppercase tracking-wider leading-tight">{user.organization}</span>
+                  )}
+                </div>
               </div>
-              <button onClick={logout} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+              <button onClick={logout} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Logout">
                 <LogOut className="w-5 h-5" />
               </button>
             </div>

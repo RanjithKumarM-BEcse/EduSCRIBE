@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, PlayCircle, Video } from 'lucide-react';
+import { ArrowLeft, Search, PlayCircle, Video, Pencil, Check } from 'lucide-react';
 
 
 
@@ -13,35 +13,68 @@ const LectureViewer: React.FC = () => {
   
   const [lecture, setLecture] = useState<any>(null);
   const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
+  
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  const saveEdit = (originalIndex: number) => {
+    if (!lecture) return;
+    const newTranscript = [...lecture.transcript];
+    newTranscript[originalIndex].text = editValue;
+    const newLecture = { ...lecture, transcript: newTranscript };
+    setLecture(newLecture);
+
+    const savedLectures = JSON.parse(localStorage.getItem(`eduscribe_lectures_${roomCode}`) || '[]');
+    const index = savedLectures.findIndex((l: any) => l.id === lectureId);
+    if (index >= 0) {
+      savedLectures[index] = newLecture;
+      localStorage.setItem(`eduscribe_lectures_${roomCode}`, JSON.stringify(savedLectures));
+      // Dispatch custom event for cross-tab syncing in the same app if we wanted, 
+      // but standard 'storage' event fires across tabs naturally!
+    }
+    setEditingIndex(null);
+  };
 
   useEffect(() => {
     let activeUrl: string | null = null;
     
-    if (!roomCode || !lectureId) return;
-    const savedLectures = JSON.parse(localStorage.getItem(`eduscribe_lectures_${roomCode}`) || '[]');
-    const found = savedLectures.find((l: any) => l.id === lectureId);
-    
-    if (found) {
-      setLecture(found);
+    const loadLecture = () => {
+      if (!roomCode || !lectureId) return;
+      const savedLectures = JSON.parse(localStorage.getItem(`eduscribe_lectures_${roomCode}`) || '[]');
+      const found = savedLectures.find((l: any) => l.id === lectureId);
       
-      // Load video from IndexedDB
-      if (found.videoId) {
-        import('../utils/indexedDB').then(({ getVideo }) => {
-          getVideo(found.videoId).then((file) => {
-            if (file) {
-              activeUrl = URL.createObjectURL(file);
-              setVideoObjectUrl(activeUrl);
-            }
-          }).catch(console.error);
-        });
-      } else if (found.videoUrl) {
-         // Fallback for older lectures before IndexedDB
-         setVideoObjectUrl(found.videoUrl);
+      if (found) {
+        setLecture(found);
+        
+        // Load video from IndexedDB only if we haven't loaded it yet
+        if (found.videoId && !videoObjectUrl) {
+          import('../utils/indexedDB').then(({ getVideo }) => {
+            getVideo(found.videoId).then((file) => {
+              if (file) {
+                activeUrl = URL.createObjectURL(file);
+                setVideoObjectUrl(activeUrl);
+              }
+            }).catch(console.error);
+          });
+        } else if (found.videoUrl && !videoObjectUrl) {
+           setVideoObjectUrl(found.videoUrl);
+        }
       }
-    }
+    };
+
+    loadLecture();
+
+    // Cross-tab synchronization! (The "instantly on everyone else's screen" feature)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `eduscribe_lectures_${roomCode}`) {
+        loadLecture(); // Reload instantly if another tab edits it
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
     
     // Cleanup blob url on unmount
     return () => {
+       window.removeEventListener('storage', handleStorageChange);
        if (activeUrl) URL.revokeObjectURL(activeUrl);
     };
   }, [roomCode, lectureId]);
@@ -274,24 +307,75 @@ const LectureViewer: React.FC = () => {
           
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
             {filteredTranscript.map((item: any, idx: number) => {
+              // We need the original index in `lecture.transcript` to save properly, not the filtered index
+              const originalIndex = lecture?.transcript?.findIndex((t: any) => t.start === item.start);
               const isActive = currentTime >= item.start && currentTime < item.end;
+              const isEditing = editingIndex === originalIndex;
+
               return (
                 <div 
                   key={idx}
-                  onClick={() => handleTranscriptClick(item.start)}
-                  className={`p-3 rounded-xl cursor-pointer transition-all border-l-4 ${
+                  className={`p-3 rounded-xl transition-all border-l-4 group ${
                     isActive 
                       ? 'bg-purple-50 border-primary shadow-sm' 
                       : 'bg-white border-transparent hover:bg-gray-50'
                   }`}
                 >
-                  <div className="flex space-x-3">
-                    <span className={`text-xs font-bold mt-1 ${isActive ? 'text-primary' : 'text-gray-400'}`}>
+                  <div className="flex space-x-3 w-full">
+                    <span 
+                      onClick={() => !isEditing && handleTranscriptClick(item.start)}
+                      className={`text-xs font-bold mt-1 cursor-pointer hover:underline ${isActive ? 'text-primary' : 'text-gray-400'}`}
+                    >
                       {formatTime(item.start)}
                     </span>
-                    <p className={`text-sm leading-relaxed ${isActive ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
-                      {item.text}
-                    </p>
+                    
+                    <div className="flex-1 relative">
+                      {isEditing ? (
+                        <div className="flex flex-col space-y-2">
+                          <textarea
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="w-full text-sm leading-relaxed p-2 border border-primary/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[80px]"
+                            autoFocus
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <button 
+                              onClick={() => setEditingIndex(null)}
+                              className="px-3 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button 
+                              onClick={() => saveEdit(originalIndex)}
+                              className="px-3 py-1 text-xs bg-primary text-white font-bold rounded-md flex items-center space-x-1 hover:bg-primary/90 transition-colors shadow-sm"
+                            >
+                              <Check className="w-3 h-3" />
+                              <span>Save</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="group/text relative">
+                          <p 
+                            onClick={() => handleTranscriptClick(item.start)}
+                            className={`text-sm leading-relaxed cursor-pointer ${isActive ? 'text-gray-900 font-medium' : 'text-gray-600'}`}
+                          >
+                            {item.text}
+                          </p>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingIndex(originalIndex);
+                              setEditValue(item.text);
+                            }}
+                            title="Correct this transcript"
+                            className="absolute -top-1 -right-1 p-1.5 bg-white text-gray-400 hover:text-primary shadow-sm border border-gray-100 rounded-lg opacity-0 group-hover/text:opacity-100 transition-all z-10"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

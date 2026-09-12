@@ -160,6 +160,13 @@ const LectureViewer: React.FC = () => {
 
            if (matchTimes.length > 0) {
               setSemanticResults(matchTimes);
+              handleTranscriptClick(matchTimes[0]); // Instantly jump!
+              
+              // Scroll to the transcript block
+              setTimeout(() => {
+                const el = document.getElementById(`transcript-block-${matchTimes[0]}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
            } else {
               setSemanticResults([-1]);
            }
@@ -202,8 +209,19 @@ const LectureViewer: React.FC = () => {
         if (content === 'NONE') {
           setSemanticResults([-1]); // denotes no results
         } else {
-          const times = content.split(',').map((s: string) => parseFloat(s.trim())).filter((n: number) => !isNaN(n));
-          setSemanticResults(times);
+          const times = content.match(/\d+(\.\d+)?/g)?.map(Number) || [];
+          if (times.length > 0) {
+            setSemanticResults(times);
+            handleTranscriptClick(times[0]); // Instantly jump!
+            
+            // Scroll to the transcript block
+            setTimeout(() => {
+              const el = document.getElementById(`transcript-block-${times[0]}`);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+          } else {
+            setSemanticResults([-1]);
+          }
         }
       } catch (err) {
         setSemanticError('Search failed.');
@@ -220,8 +238,8 @@ const LectureViewer: React.FC = () => {
     if (searchMode === 'exact') {
       return item.text.toLowerCase().includes(searchQuery.toLowerCase());
     } else {
-      if (semanticResults.length === 0 || semanticResults.includes(-1)) return false;
-      return semanticResults.includes(item.start);
+      // In semantic mode, we don't filter out the list, we just highlight the matches
+      return true;
     }
   });
 
@@ -311,13 +329,18 @@ const LectureViewer: React.FC = () => {
               const originalIndex = lecture?.transcript?.findIndex((t: any) => t.start === item.start);
               const isActive = currentTime >= item.start && currentTime < item.end;
               const isEditing = editingIndex === originalIndex;
+              
+              const isSemanticMatch = searchMode === 'semantic' && semanticResults.includes(item.start);
 
               return (
                 <div 
                   key={idx}
+                  id={`transcript-block-${item.start}`}
                   className={`p-3 rounded-xl transition-all border-l-4 group ${
                     isActive 
                       ? 'bg-purple-50 border-primary shadow-sm' 
+                      : isSemanticMatch
+                      ? 'bg-yellow-50 border-yellow-400 shadow-sm'
                       : 'bg-white border-transparent hover:bg-gray-50'
                   }`}
                 >

@@ -1,7 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth';
-import { db, TABLE_NAME } from '../utils/db';
-import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { mockDB } from '../utils/db';
 
 const generateRoomCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
@@ -9,48 +8,39 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
   try {
     const { name, isPublic, password } = req.body;
     const user = req.user;
-    if (!user || user.role !== 'staff') {
-      res.status(403).json({ message: 'Only staff can create rooms' });
+    if (!user) {
+      res.status(403).json({ message: 'Unauthorized' });
       return;
     }
 
     const roomCode = generateRoomCode();
     const now = new Date().toISOString();
 
-    await db.send(new PutCommand({
-      TableName: TABLE_NAME,
-      Item: {
-        PK: `ROOM#${roomCode}`,
-        SK: 'METADATA',
-        roomCode,
-        name,
-        instructorId: user.id,
-        instructorName: user.name,
-        isPublic: !!isPublic,
-        password: isPublic ? null : password,
-        createdAt: now,
-        studentsCount: 0,
-        lecturesCount: 0
-      }
-    }));
+    const newRoom = {
+      roomCode,
+      name,
+      instructorId: user.id,
+      instructorName: user.name,
+      isPublic: !!isPublic,
+      password: isPublic ? null : password,
+      createdAt: now,
+      studentsCount: 0,
+      lecturesCount: 0
+    };
 
-    await db.send(new PutCommand({
-      TableName: TABLE_NAME,
-      Item: {
-        PK: `USER#${user.id}`,
-        SK: `ROOM#${roomCode}`,
-        roomCode,
-        name,
-        instructorName: user.name,
-        role: 'owner',
-        joinedAt: now
-      }
-    }));
+    // Save to Mock DB
+    mockDB.rooms.set(roomCode, newRoom);
+
+    // Save relation to user
+    if (!mockDB.userRooms.has(user.id)) {
+      mockDB.userRooms.set(user.id, new Set());
+    }
+    mockDB.userRooms.get(user.id)!.add(roomCode);
 
     res.status(201).json({ roomCode, name, isPublic });
   } catch (error: any) {
     console.error('Create room error:', error);
-    res.status(500).json({ message: 'AWS DB Error: ' + error.message });
+    res.status(500).json({ message: 'Cloud DB Error: ' + error.message });
   }
 };
 
@@ -59,19 +49,15 @@ export const getMyRooms = async (req: AuthRequest, res: Response): Promise<void>
     const user = req.user;
     if (!user) { res.status(401).json({ message: 'Unauthorized' }); return; }
 
-    const result = await db.send(new QueryCommand({
-      TableName: TABLE_NAME,
-      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
-      ExpressionAttributeValues: {
-        ':pk': `USER#${user.id}`,
-        ':sk': 'ROOM#'
-      }
-    }));
+    const myRoomCodes = mockDB.userRooms.get(user.id) || new Set();
+    const myRooms = Array.from(myRoomCodes)
+      .map(code => mockDB.rooms.get(code))
+      .filter(Boolean);
 
-    res.status(200).json({ rooms: result.Items || [] });
+    res.status(200).json({ rooms: myRooms });
   } catch (error: any) {
     console.error('Get rooms error:', error);
-    res.status(500).json({ message: 'AWS DB Error: ' + error.message });
+    res.status(500).json({ message: 'Cloud DB Error: ' + error.message });
   }
 };
 
@@ -81,39 +67,30 @@ export const joinRoom = async (req: AuthRequest, res: Response): Promise<void> =
     const user = req.user;
     if (!user) { res.status(401).json({ message: 'Unauthorized' }); return; }
 
-    const roomMeta = await db.send(new GetCommand({
-      TableName: TABLE_NAME,
-      Key: { PK: `ROOM#${roomCode}`, SK: 'METADATA' }
-    }));
+    const roomMeta = mockDB.rooms.get(roomCode);
 
-    if (!roomMeta.Item) {
+    if (!roomMeta) {
       res.status(404).json({ message: 'Room not found' });
       return;
     }
 
-    if (!roomMeta.Item.isPublic && roomMeta.Item.password !== password) {
+    if (!roomMeta.isPublic && roomMeta.password !== password) {
       res.status(401).json({ message: 'Incorrect password for this private room' });
       return;
     }
 
-    const now = new Date().toISOString();
+    // Add to user's joined rooms
+    if (!mockDB.userRooms.has(user.id)) {
+      mockDB.userRooms.set(user.id, new Set());
+    }
+    mockDB.userRooms.get(user.id)!.add(roomCode);
+    
+    // Increment student count
+    roomMeta.studentsCount = (roomMeta.studentsCount || 0) + 1;
 
-    await db.send(new PutCommand({
-      TableName: TABLE_NAME,
-      Item: {
-        PK: `USER#${user.id}`,
-        SK: `ROOM#${roomCode}`,
-        roomCode,
-        name: roomMeta.Item.name,
-        instructorName: roomMeta.Item.instructorName,
-        role: 'student',
-        joinedAt: now
-      }
-    }));
-
-    res.status(200).json({ message: 'Joined successfully', room: roomMeta.Item });
+    res.status(200).json({ message: 'Joined successfully', room: roomMeta });
   } catch (error: any) {
     console.error('Join room error:', error);
-    res.status(500).json({ message: 'AWS DB Error: ' + error.message });
+    res.status(500).json({ message: 'Cloud DB Error: ' + error.message });
   }
 };

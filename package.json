@@ -1,0 +1,27 @@
+{
+  "name": "eduscribe-root",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd client && npm install && npm run build",
+    "install": "cd client && npm install"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1131.0",
+    "@aws-sdk/client-s3": "^3.1131.0",
+    "@aws-sdk/lib-dynamodb": "^3.1131.0",
+    "@aws-sdk/s3-request-presigner": "^3.1131.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "google-auth-library": "^11.0.2",
+    "groq-sdk": "^1.6.0",
+    "jsonwebtoken": "^9.0.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.20.2",
+    "typescript": "^5.0.0"
+  }
+}

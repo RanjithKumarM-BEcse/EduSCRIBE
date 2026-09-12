@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import authRoutes from './routes/auth.routes.js';
+import roomsRoutes from './routes/rooms.routes.js';
 
 dotenv.config();
 
@@ -8,9 +10,6 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-import authRoutes from './routes/auth.routes';
-import roomsRoutes from './routes/rooms.routes';
 
 // Mount routes. Vercel sometimes strips the /api prefix depending on the rewrite rule.
 app.use('/api/auth', authRoutes);

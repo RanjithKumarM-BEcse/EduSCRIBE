@@ -18,7 +18,7 @@ const Dashboard: React.FC = () => {
 
   const [classes, setClasses] = useState<any[]>([]);
   // Use relative path for Vercel, fallback to localhost for development
-  const API_URL = import.meta.env.PROD ? '/api' : 'http://localhost:5000/api';
+  const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api';
 
   useEffect(() => {
     const fetchRooms = async () => {

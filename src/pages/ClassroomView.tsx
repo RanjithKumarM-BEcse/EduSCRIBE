@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { PlayCircle, Upload, ArrowLeft, Video, Clock } from 'lucide-react';
 
-const API_URL = import.meta.env.PROD ? '/api' : 'http://localhost:5000/api';
+const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api';
 
 const ClassroomView: React.FC = () => {
   const { roomCode } = useParams<{ roomCode: string }>();

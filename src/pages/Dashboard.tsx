@@ -17,7 +17,8 @@ const Dashboard: React.FC = () => {
   const isStaff = user?.role === 'staff';
 
   const [classes, setClasses] = useState<any[]>([]);
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  // Use relative path for Vercel, fallback to localhost for development
+  const API_URL = import.meta.env.PROD ? '/api' : 'http://localhost:5000/api';
 
   useEffect(() => {
     const fetchRooms = async () => {

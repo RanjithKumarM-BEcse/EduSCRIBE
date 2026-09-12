@@ -65,9 +65,17 @@ const Login: React.FC = () => {
             text="continue_with"
           />
         </div>
+        
+        <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-xl w-full text-center">
+          <p className="text-xs text-gray-500 font-semibold mb-1">HAVING GOOGLE ERRORS?</p>
+          <p className="text-xs text-gray-400 mb-2">Copy this exact URL and paste it into Google Cloud's "Authorized JavaScript origins":</p>
+          <code className="text-xs font-mono bg-white px-2 py-1 border rounded text-primary block break-all">
+            {window.location.origin}
+          </code>
+        </div>
       </div>
       
-      <p className="mt-8 text-sm text-gray-400">
+      <p className="mt-6 text-sm text-gray-400">
         By continuing, you agree to our Terms of Service & Privacy Policy.
       </p>
     </div>

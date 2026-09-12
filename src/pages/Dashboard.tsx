@@ -92,6 +92,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white px-4 py-2 rounded-lg z-50">
+        Skip to main content
+      </a>
       <CreateClassModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} onCreate={handleCreateClass} />
       <JoinClassModal isOpen={isJoinOpen} onClose={() => setIsJoinOpen(false)} onJoin={handleJoinClass} />
       <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
@@ -129,7 +132,7 @@ const Dashboard: React.FC = () => {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center space-x-4">
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Classes</h1>
@@ -179,8 +182,17 @@ const Dashboard: React.FC = () => {
           {classes.map((cls) => (
             <div 
               key={cls.id} 
+              tabIndex={0}
               onClick={() => navigate(`/classroom/${cls.roomCode}`)}
-              className="bg-white rounded-2xl border border-gray-200 hover:border-primary shadow-sm overflow-hidden cursor-pointer group hover:-translate-y-1 transition-all"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate(`/classroom/${cls.roomCode}`);
+                }
+              }}
+              role="button"
+              aria-label={`Open class: ${cls.name}`}
+              className="bg-white rounded-2xl border border-gray-200 hover:border-primary shadow-sm overflow-hidden cursor-pointer group hover:-translate-y-1 transition-all focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <div className="h-32 bg-gray-100 relative w-full flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20"></div>

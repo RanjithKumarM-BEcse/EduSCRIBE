@@ -80,31 +80,15 @@ const ClassroomView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white px-4 py-2 rounded-lg z-50">
+        Skip to main content
+      </a>
       <UploadLectureModal 
         isOpen={isUploadOpen} 
         onClose={() => setIsUploadOpen(false)} 
         onUpload={handleUploadComplete} 
       />
 
-      {/* Simple Header */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
-         <div className="flex items-center space-x-4">
-            <button 
-              onClick={() => navigate('/dashboard')}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="flex items-center space-x-2">
-               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <PlayCircle className="text-white w-5 h-5" />
-               </div>
-               <span className="font-bold text-xl text-gray-900">eduScribe</span>
-            </div>
-            <span className="text-gray-300 font-light text-xl px-2">/</span>
-            <span className="font-bold text-gray-700">{roomData?.name || 'Classroom'}</span>
-         </div>
-         <div className="flex items-center space-x-3 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
             <img src={user?.avatar} alt="avatar" className="w-6 h-6 rounded-full" />
             <span className="text-sm font-bold text-gray-700">{user?.name}</span>
          </div>

@@ -28,9 +28,13 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-gray-50">
-      {/* Left Side - Brand (Hidden on Mobile) */}
-      <div className="hidden lg:flex w-1/2 bg-primary p-12 flex-col justify-center relative overflow-hidden">
+    <div className="min-h-screen flex flex-col lg:flex-row font-sans">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white px-4 py-2 rounded-lg z-50">
+        Skip to main content
+      </a>
+      
+      {/* Left Side - Brand / Marketing */}
+      <div className="hidden lg:flex w-1/2 bg-gray-900 text-white flex-col justify-between p-12 relative overflow-hidden">
         <div className="absolute top-8 left-8 flex items-center space-x-2 text-white">
           <PlayCircle className="w-6 h-6" />
           <span className="font-bold text-xl tracking-tight">eduScribe</span>
@@ -63,7 +67,7 @@ const Login: React.FC = () => {
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
+      <main id="main-content" className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
         <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 p-10 text-center relative overflow-hidden">
           
           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">

@@ -248,20 +248,27 @@ const LectureViewer: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white px-4 py-2 rounded-lg z-50">
+        Skip to main content
+      </a>
       {/* Header */}
       <div className="bg-white border-b border-gray-200 h-16 flex items-center px-4 shrink-0 z-10">
-        <button onClick={() => navigate(`/classroom/${roomCode}`)} className="p-2 hover:bg-gray-100 rounded-full mr-4 text-gray-600 transition-colors">
+        <button 
+          onClick={() => navigate(`/classroom/${roomCode}`)} 
+          className="p-2 hover:bg-gray-100 rounded-full mr-4 text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+          aria-label="Back to Classroom"
+        >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex items-center">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mr-3">
-            <PlayCircle className="text-white w-5 h-5" />
+            <PlayCircle className="text-white w-5 h-5" aria-hidden="true" />
           </div>
           <h1 className="font-bold text-gray-900 text-lg">{lecture?.title || 'Lecture Viewer'}</h1>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+      <main id="main-content" className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         {/* Left Side: Video Player (65%) */}
         <div className="w-full lg:w-[65%] h-[40%] lg:h-full bg-black flex flex-col relative shrink-0">
           {!videoObjectUrl ? (
@@ -281,22 +288,31 @@ const LectureViewer: React.FC = () => {
         </div>
 
         {/* Right Side: Transcript (35%) */}
-        <div className="flex flex-col w-full lg:w-[35%] bg-white border-t lg:border-t-0 lg:border-l border-gray-200 h-[60%] lg:h-full shrink-0">
+        <div 
+          className="flex flex-col w-full lg:w-[35%] bg-white border-t lg:border-t-0 lg:border-l border-gray-200 h-[60%] lg:h-full shrink-0"
+          aria-label="Interactive Transcript"
+        >
           <div className="p-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="font-bold text-gray-900 flex items-center">
+              <h2 className="font-bold text-gray-900 flex items-center" id="transcript-heading">
                 AI Transcript
               </h2>
-              <div className="flex bg-gray-200 p-0.5 rounded-lg">
+              <div 
+                className="flex bg-gray-200 p-0.5 rounded-lg" 
+                role="group" 
+                aria-label="Search Mode"
+              >
                 <button 
                   onClick={() => setSearchMode('exact')}
-                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all ${searchMode === 'exact' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  aria-pressed={searchMode === 'exact'}
+                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-primary ${searchMode === 'exact' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                 >
                   Exact
                 </button>
                 <button 
                   onClick={() => setSearchMode('semantic')}
-                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all ${searchMode === 'semantic' ? 'bg-primary text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  aria-pressed={searchMode === 'semantic'}
+                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-primary ${searchMode === 'semantic' ? 'bg-primary text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                 >
                   Semantic
                 </button>
@@ -306,9 +322,9 @@ const LectureViewer: React.FC = () => {
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 {isSemanticSearching ? (
-                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" aria-label="Searching..." />
                 ) : (
-                  <Search className={`h-4 w-4 ${searchMode === 'semantic' ? 'text-primary' : 'text-gray-400'}`} />
+                  <Search className={`h-4 w-4 ${searchMode === 'semantic' ? 'text-primary' : 'text-gray-400'}`} aria-hidden="true" />
                 )}
               </div>
               <input 
@@ -316,6 +332,7 @@ const LectureViewer: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={searchMode === 'semantic' ? "Ask a question about the video..." : "Search exact words..."} 
+                aria-label={searchMode === 'semantic' ? "Semantic Search Input" : "Exact Search Input"}
                 className={`w-full pl-10 pr-4 py-2 rounded-xl border outline-none transition-all text-sm ${
                   searchMode === 'semantic' 
                     ? 'border-purple-200 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-purple-50/30' 
@@ -323,10 +340,14 @@ const LectureViewer: React.FC = () => {
                 }`}
               />
             </div>
-            {semanticError && <p className="text-xs text-red-500 mt-2 font-medium">{semanticError}</p>}
+            {semanticError && <p className="text-xs text-red-500 mt-2 font-medium" role="alert">{semanticError}</p>}
           </div>
           
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          <div 
+            className="flex-1 overflow-y-auto p-4 space-y-2" 
+            role="region" 
+            aria-labelledby="transcript-heading"
+          >
             {filteredTranscript.map((item: any, idx: number) => {
               // We need the original index in `lecture.transcript` to save properly, not the filtered index
               const originalIndex = lecture?.transcript?.findIndex((t: any) => t.start === item.start);
@@ -340,7 +361,7 @@ const LectureViewer: React.FC = () => {
                 <div 
                   key={idx}
                   id={`transcript-block-${originalIndex}`}
-                  className={`p-3 rounded-xl transition-all border-l-4 group ${
+                  className={`p-3 rounded-xl transition-all border-l-4 group focus-within:ring-2 focus-within:ring-primary ${
                     isActive 
                       ? 'bg-purple-50 border-primary shadow-sm' 
                       : isSemanticMatch
@@ -349,12 +370,13 @@ const LectureViewer: React.FC = () => {
                   }`}
                 >
                   <div className="flex space-x-3 w-full">
-                    <span 
+                    <button 
                       onClick={() => !isEditing && handleTranscriptClick(item.start)}
-                      className={`text-xs font-bold mt-1 cursor-pointer hover:underline ${isActive ? 'text-primary' : 'text-gray-400'}`}
+                      className={`text-xs font-bold mt-1 cursor-pointer hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded ${isActive ? 'text-primary' : 'text-gray-400'}`}
+                      aria-label={`Jump video to ${formatTime(item.start)}`}
                     >
                       {formatTime(item.start)}
-                    </span>
+                    </button>
                     
                     <div className="flex-1 relative">
                       {isEditing ? (
@@ -362,21 +384,23 @@ const LectureViewer: React.FC = () => {
                           <textarea
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            className="w-full text-sm leading-relaxed p-2 border border-primary/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[80px]"
+                            className="w-full text-sm leading-relaxed p-2 border border-primary/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]"
                             autoFocus
+                            aria-label="Edit transcript block"
                           />
                           <div className="flex justify-end space-x-2">
                             <button 
                               onClick={() => setEditingIndex(null)}
-                              className="px-3 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
+                              className="px-3 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
                             >
                               Cancel
                             </button>
                             <button 
                               onClick={() => saveEdit(originalIndex)}
-                              className="px-3 py-1 text-xs bg-primary text-white font-bold rounded-md flex items-center space-x-1 hover:bg-primary/90 transition-colors shadow-sm"
+                              className="px-3 py-1 text-xs bg-primary text-white font-bold rounded-md flex items-center space-x-1 hover:bg-primary/90 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
+                              aria-label="Save transcript edit"
                             >
-                              <Check className="w-3 h-3" />
+                              <Check className="w-3 h-3" aria-hidden="true" />
                               <span>Save</span>
                             </button>
                           </div>
@@ -384,8 +408,11 @@ const LectureViewer: React.FC = () => {
                       ) : (
                         <div className="group/text relative">
                           <p 
+                            tabIndex={0}
                             onClick={() => handleTranscriptClick(item.start)}
-                            className={`text-sm leading-relaxed cursor-pointer ${isActive ? 'text-gray-900 font-medium' : 'text-gray-600'}`}
+                            onKeyDown={(e) => e.key === 'Enter' && handleTranscriptClick(item.start)}
+                            className={`text-sm leading-relaxed cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded p-1 -ml-1 ${isActive ? 'text-gray-900 font-medium' : 'text-gray-600'}`}
+                            aria-label={`Read transcript: ${item.text}`}
                           >
                             {item.text}
                           </p>
@@ -395,10 +422,10 @@ const LectureViewer: React.FC = () => {
                               setEditingIndex(originalIndex);
                               setEditValue(item.text);
                             }}
-                            title="Correct this transcript"
-                            className="absolute -top-1 -right-1 p-1.5 bg-white text-gray-400 hover:text-primary shadow-sm border border-gray-100 rounded-lg opacity-0 group-hover/text:opacity-100 transition-all z-10"
+                            aria-label={`Edit this transcript block from ${formatTime(item.start)}`}
+                            className="absolute -top-1 -right-1 p-1.5 bg-white text-gray-400 hover:text-primary shadow-sm border border-gray-100 rounded-lg opacity-0 group-hover/text:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary transition-all z-10"
                           >
-                            <Pencil className="w-3.5 h-3.5" />
+                            <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
                           </button>
                         </div>
                       )}
@@ -409,7 +436,7 @@ const LectureViewer: React.FC = () => {
             })}
             
             {filteredTranscript.length === 0 && (
-              <div className="text-center py-10 text-gray-500 text-sm">
+              <div className="text-center py-10 text-gray-500 text-sm" role="status">
                 {searchMode === 'semantic' && isSemanticSearching 
                   ? 'AI is analyzing the transcript...' 
                   : searchQuery 

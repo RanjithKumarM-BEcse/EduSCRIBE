@@ -222,7 +222,7 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
               
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-6 text-xs text-blue-800 flex items-start flex-col">
                  <div className="flex mb-2">
-                   <div className="shrink-0 mr-2 mt-0.5">ℹ️</div>
+                   <div className="shrink-0 mr-2 mt-0.5" aria-hidden="true">ℹ️</div>
                    <p><b>Optional:</b> Enter a Groq API Key to generate real AI transcripts using Whisper-large-v3. Otherwise, a mock transcript will be used.</p>
                  </div>
                  <input
@@ -230,14 +230,16 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
                    placeholder="gsk_..."
                    value={apiKey}
                    onChange={(e) => setApiKey(e.target.value)}
-                   className="w-full px-3 py-2 mt-1 rounded border border-blue-200 outline-none focus:border-blue-400"
+                   aria-label="Groq API Key"
+                   className="w-full px-3 py-2 mt-1 rounded border border-blue-200 outline-none focus:border-primary focus:ring-2 focus:ring-primary"
                  />
               </div>
 
               <button 
                 type="submit"
                 disabled={!file || !title}
-                className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="Upload and Transcribe"
               >
                 Upload & Transcribe
               </button>

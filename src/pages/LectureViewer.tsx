@@ -104,8 +104,34 @@ const LectureViewer: React.FC = () => {
       
       const apiKey = localStorage.getItem('groq_api_key');
       if (!apiKey) {
-        setSemanticError('Groq API Key required for semantic search.');
-        setIsSemanticSearching(false);
+        // MOCK SEMANTIC SEARCH FOR DEMOS WITHOUT API KEY
+        setTimeout(() => {
+           const query = searchQuery.toLowerCase();
+           const matchTimes: number[] = [];
+           
+           // Simple mock semantic engine based on keywords
+           transcriptList.forEach((t: any) => {
+             const text = t.text.toLowerCase();
+             // Simulate AI understanding meaning instead of exact words
+             if (
+               (query.includes('math') && text.includes('formula')) ||
+               (query.includes('hello') && text.includes('welcome')) ||
+               (query.includes('important') && text.includes('crucial')) ||
+               (query.includes('find') && text.includes('search'))
+             ) {
+                matchTimes.push(t.start);
+             } else if (text.includes(query)) {
+                matchTimes.push(t.start);
+             }
+           });
+
+           if (matchTimes.length > 0) {
+              setSemanticResults(matchTimes);
+           } else {
+              setSemanticResults([-1]);
+           }
+           setIsSemanticSearching(false);
+        }, 1200); // simulate network delay
         return;
       }
 

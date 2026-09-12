@@ -2,12 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Presentation } from 'lucide-react';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const RoleSelection: React.FC = () => {
-  const { user, token, setRole } = useAuth();
+  const { user, setRole } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 

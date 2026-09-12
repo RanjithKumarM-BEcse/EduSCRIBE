@@ -13,25 +13,19 @@ const Dashboard: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-
   const isStaff = user?.role === 'staff';
 
   const [classes, setClasses] = useState<any[]>([]);
-  // Use relative path for Vercel, fallback to localhost for development
-  const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api';
 
   useEffect(() => {
-    const fetchRooms = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/rooms`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        setClasses(res.data.rooms || []);
-      } catch (err) {
-        console.error('Failed to fetch rooms', err);
-      }
+    // Load this specific user's joined/created classes on mount
+    const fetchRooms = () => {
+      if (!user) return;
+      const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
+      const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+      setClasses(allSaved.filter((c: any) => myClassIds.includes(c.roomCode)));
     };
-    if (user) fetchRooms();
+    fetchRooms();
 
     // Check for pending join
     const urlParams = new URLSearchParams(window.location.search);
@@ -40,32 +34,60 @@ const Dashboard: React.FC = () => {
     
     if (joinCode || pendingCode) {
       setIsJoinOpen(true);
-      // Clean up local storage
       if (pendingCode) localStorage.removeItem('pending_join_code');
     }
   }, [user]);
 
-  const handleCreateClass = async (data: any) => {
-    try {
-      const res = await axios.post(`${API_URL}/rooms`, data, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      // Add the new room to local state instantly
-      setClasses([...classes, { ...res.data, studentsCount: 0, lecturesCount: 0 }]);
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to create class');
+  const handleCreateClass = (data: any) => {
+    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const newClass = { 
+      id: Math.random().toString(),
+      roomCode,
+      instructorId: user?.id,
+      instructorName: user?.name,
+      studentsCount: 0, 
+      lecturesCount: 0, 
+      createdAt: new Date().toISOString(),
+      ...data 
+    };
+    
+    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+    localStorage.setItem('eduscribe_all_classes', JSON.stringify([...allSaved, newClass]));
+    
+    if (user) {
+      const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
+      localStorage.setItem(`eduscribe_my_classes_${user.id}`, JSON.stringify([...myClassIds, roomCode]));
     }
+    
+    setClasses([...classes, newClass]);
   };
 
-  const handleJoinClass = async (code: string, password?: string) => {
-    try {
-      const res = await axios.post(`${API_URL}/rooms/join`, { roomCode: code, password }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      navigate(`/classroom/${code}`);
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to join class');
+  const handleJoinClass = (code: string, password?: string) => {
+    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+    const foundClass = allSaved.find((c: any) => c.roomCode === code);
+    
+    if (!foundClass) {
+      alert(`Room code ${code} not found! Ask your teacher for the correct code.`);
+      return;
     }
+
+    if (!foundClass.isPublic && foundClass.password !== password) {
+      alert('Incorrect password for this private room.');
+      return;
+    }
+
+    const alreadyJoined = classes.find((c) => c.roomCode === code);
+    if (!alreadyJoined && user) {
+      const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
+      localStorage.setItem(`eduscribe_my_classes_${user.id}`, JSON.stringify([...myClassIds, code]));
+      
+      // Update student count
+      foundClass.studentsCount = (foundClass.studentsCount || 0) + 1;
+      localStorage.setItem('eduscribe_all_classes', JSON.stringify(allSaved));
+      
+      setClasses([...classes, foundClass]);
+    }
+    navigate(`/classroom/${code}`);
   };
 
   return (
@@ -150,11 +172,11 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center space-x-4 border-t border-gray-50 pt-4">
                 <div className="flex items-center text-sm font-bold text-gray-400 group-hover:text-gray-600 transition-colors">
                   <Users className="w-4 h-4 mr-1.5" />
-                  <span>{cls.students} students</span>
+                  <span>{cls.studentsCount || 0} students</span>
                 </div>
                 <div className="flex items-center text-sm font-bold text-gray-400 group-hover:text-gray-600 transition-colors">
                   <PlayCircle className="w-4 h-4 mr-1.5" />
-                  <span>{cls.lectures} lectures</span>
+                  <span>{cls.lecturesCount || 0} lectures</span>
                 </div>
               </div>
             </div>

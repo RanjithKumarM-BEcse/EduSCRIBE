@@ -21,14 +21,31 @@ const JoinLinkRedirect: React.FC = () => {
           return;
         }
 
-        // Try to join automatically (only works if public)
+        // Try to join automatically
         try {
-          await axios.post(`${API_URL}/rooms/join`, { roomCode }, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-          });
+          const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+          const foundClass = allSaved.find((c: any) => c.roomCode === roomCode);
+          
+          if (!foundClass) {
+             navigate(`/dashboard?join=${roomCode}`);
+             return;
+          }
+          
+          if (!foundClass.isPublic) {
+             // Requires password, go to dashboard
+             navigate(`/dashboard?join=${roomCode}`);
+             return;
+          }
+
+          const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
+          if (!myClassIds.includes(roomCode)) {
+            localStorage.setItem(`eduscribe_my_classes_${user.id}`, JSON.stringify([...myClassIds, roomCode]));
+            foundClass.studentsCount = (foundClass.studentsCount || 0) + 1;
+            localStorage.setItem('eduscribe_all_classes', JSON.stringify(allSaved));
+          }
+          
           navigate(`/classroom/${roomCode}`);
         } catch (err: any) {
-          // If it fails (e.g., requires password), send them to dashboard with a query param
           navigate(`/dashboard?join=${roomCode}`);
         }
       } catch (e) {

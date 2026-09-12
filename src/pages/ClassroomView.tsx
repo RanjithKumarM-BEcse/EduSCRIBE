@@ -16,18 +16,10 @@ const ClassroomView: React.FC = () => {
   const [roomData, setRoomData] = useState<any>(null);
 
   useEffect(() => {
-    const fetchRoom = async () => {
-      try {
-        // We'll fetch from the global rooms list we built in the Dashboard
-        // Ideally there's a GET /api/rooms/:roomCode but we can use the /rooms list
-        const res = await axios.get(`${API_URL}/rooms`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        const room = res.data.rooms.find((r: any) => r.roomCode === roomCode);
-        if (room) setRoomData(room);
-      } catch (err) {
-        console.error('Failed to fetch room data', err);
-      }
+    const fetchRoom = () => {
+      const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+      const room = allSaved.find((r: any) => r.roomCode === roomCode);
+      if (room) setRoomData(room);
     };
     fetchRoom();
   }, [roomCode]);

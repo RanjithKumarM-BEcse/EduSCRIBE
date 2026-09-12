@@ -5,14 +5,22 @@ import { ArrowLeft, Search, PlayCircle } from 'lucide-react';
 
 
 const LectureViewer: React.FC = () => {
-  const { roomCode } = useParams();
+  const { roomCode, lectureId } = useParams<{ roomCode: string, lectureId: string }>();
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Empty state for now
-  const [transcript, setTranscript] = useState<any[]>([]);
+  const [lecture, setLecture] = useState<any>(null);
+
+  useEffect(() => {
+    if (!roomCode || !lectureId) return;
+    const savedLectures = JSON.parse(localStorage.getItem(`eduscribe_lectures_${roomCode}`) || '[]');
+    const found = savedLectures.find((l: any) => l.id === lectureId);
+    if (found) {
+      setLecture(found);
+    }
+  }, [roomCode, lectureId]);
 
   // Update current time as video plays
   useEffect(() => {
@@ -40,7 +48,8 @@ const LectureViewer: React.FC = () => {
     return `${m}:${s}`;
   };
 
-  const filteredTranscript = transcript.filter(item => 
+  const transcriptList = lecture?.transcript || [];
+  const filteredTranscript = transcriptList.filter((item: any) => 
     item.text.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -55,18 +64,27 @@ const LectureViewer: React.FC = () => {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mr-3">
             <PlayCircle className="text-white w-5 h-5" />
           </div>
-          <h1 className="font-bold text-gray-900 text-lg">Lecture Viewer</h1>
+          <h1 className="font-bold text-gray-900 text-lg">{lecture?.title || 'Lecture Viewer'}</h1>
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Side: Video Player (65%) */}
         <div className="w-full lg:w-[65%] bg-black flex flex-col relative h-full">
-          <video 
-            ref={videoRef}
-            controls
-            className="w-full h-full object-contain bg-gray-900"
-          />
+          {!lecture?.videoUrl ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8 text-center">
+               <Video className="w-16 h-16 mb-4 text-gray-700" />
+               <p>Video is no longer available in this browser session.</p>
+               <p className="text-sm mt-2">Demo uploads are temporary and clear upon refresh.</p>
+            </div>
+          ) : (
+            <video 
+              ref={videoRef}
+              src={lecture.videoUrl}
+              controls
+              className="w-full h-full object-contain bg-gray-900"
+            />
+          )}
         </div>
 
         {/* Right Side: Transcript (35%) */}
@@ -90,7 +108,7 @@ const LectureViewer: React.FC = () => {
           </div>
           
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {filteredTranscript.map((item, idx) => {
+            {filteredTranscript.map((item: any, idx: number) => {
               const isActive = currentTime >= item.start && currentTime < item.end;
               return (
                 <div 

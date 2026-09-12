@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { PlayCircle, Upload, ArrowLeft, Video, Clock, Users, Copy, CheckCircle2 } from 'lucide-react';
+import UploadLectureModal from '../components/UploadLectureModal';
 
 const ClassroomView: React.FC = () => {
   const { roomCode } = useParams<{ roomCode: string }>();
@@ -13,18 +14,53 @@ const ClassroomView: React.FC = () => {
   const [roomData, setRoomData] = useState<any>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   useEffect(() => {
     const fetchRoom = () => {
       const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
       const room = allSaved.find((r: any) => r.roomCode === roomCode);
       if (room) setRoomData(room);
+
+      const savedLectures = JSON.parse(localStorage.getItem(`eduscribe_lectures_${roomCode}`) || '[]');
+      setLectures(savedLectures);
     };
     fetchRoom();
   }, [roomCode]);
 
-  const handleUpload = () => {
-    alert('Video Upload Flow would open here. After upload, Groq Whisper transcribes the video!');
+  const handleUploadComplete = (title: string, file: File) => {
+    // Generate object URL to play video locally
+    const videoUrl = URL.createObjectURL(file);
+    
+    // Generate a dummy transcript for demo purposes
+    const mockTranscript = [
+      { start: 0, end: 5, text: `Welcome to ${title}. Let's get started with today's topic.` },
+      { start: 5, end: 15, text: `In this lecture, we'll be covering some fundamental concepts that are crucial for understanding the broader subject matter.` },
+      { start: 15, end: 30, text: `As you watch this video, notice how the AI has automatically transcribed the audio and synchronized it with the video playback.` },
+      { start: 30, end: 45, text: `This makes it incredibly easy for students to search for specific topics and jump exactly to the moment they need to review.` }
+    ];
+
+    const newLecture = {
+      id: Math.random().toString(36).substring(2, 9),
+      title,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      videoUrl, // local blob URL
+      transcript: mockTranscript
+    };
+
+    const updatedLectures = [...lectures, newLecture];
+    setLectures(updatedLectures);
+    
+    // Save to local storage
+    localStorage.setItem(`eduscribe_lectures_${roomCode}`, JSON.stringify(updatedLectures));
+
+    // Update room lecture count
+    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+    const roomIndex = allSaved.findIndex((r: any) => r.roomCode === roomCode);
+    if (roomIndex >= 0) {
+      allSaved[roomIndex].lecturesCount = (allSaved[roomIndex].lecturesCount || 0) + 1;
+      localStorage.setItem('eduscribe_all_classes', JSON.stringify(allSaved));
+    }
   };
 
   const handleViewLecture = (id: string) => {
@@ -44,6 +80,12 @@ const ClassroomView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      <UploadLectureModal 
+        isOpen={isUploadOpen} 
+        onClose={() => setIsUploadOpen(false)} 
+        onUpload={handleUploadComplete} 
+      />
+
       {/* Simple Header */}
       <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
          <div className="flex items-center space-x-4">
@@ -77,7 +119,7 @@ const ClassroomView: React.FC = () => {
             <h2 className="text-2xl font-black text-gray-900 tracking-tight">Past Lectures</h2>
             {isStaff && (
               <button 
-                onClick={handleUpload}
+                onClick={() => setIsUploadOpen(true)}
                 className="flex items-center space-x-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all text-sm"
               >
                 <Upload className="w-4 h-4" />

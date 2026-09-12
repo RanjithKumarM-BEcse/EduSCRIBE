@@ -2,13 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, PlayCircle } from 'lucide-react';
 
-const MOCK_TRANSCRIPT = [
-  { start: 0, end: 5.5, text: "Welcome everyone to today's lecture on React Components." },
-  { start: 5.5, end: 12.0, text: "Components let you split the UI into independent, reusable pieces, and think about each piece in isolation." },
-  { start: 12.0, end: 18.5, text: "Conceptually, components are like JavaScript functions. They accept arbitrary inputs called props." },
-  { start: 18.5, end: 25.0, text: "And return React elements describing what should appear on the screen." },
-  { start: 25.0, end: 30.0, text: "Let's look at an example of a functional component now." }
-];
+
 
 const LectureViewer: React.FC = () => {
   const { roomCode } = useParams();
@@ -16,6 +10,9 @@ const LectureViewer: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Empty state for now
+  const [transcript, setTranscript] = useState<any[]>([]);
 
   // Update current time as video plays
   useEffect(() => {
@@ -43,7 +40,7 @@ const LectureViewer: React.FC = () => {
     return `${m}:${s}`;
   };
 
-  const filteredTranscript = MOCK_TRANSCRIPT.filter(item => 
+  const filteredTranscript = transcript.filter(item => 
     item.text.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -58,7 +55,7 @@ const LectureViewer: React.FC = () => {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mr-3">
             <PlayCircle className="text-white w-5 h-5" />
           </div>
-          <h1 className="font-bold text-gray-900 text-lg">Chapter 1: Components and Props</h1>
+          <h1 className="font-bold text-gray-900 text-lg">Lecture Viewer</h1>
         </div>
       </div>
 
@@ -68,10 +65,7 @@ const LectureViewer: React.FC = () => {
           <video 
             ref={videoRef}
             controls
-            className="w-full h-full object-contain"
-            // Using a dummy video for demonstration
-            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
-            poster="https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+            className="w-full h-full object-contain bg-gray-900"
           />
         </div>
 

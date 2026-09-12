@@ -9,10 +9,7 @@ const ClassroomView: React.FC = () => {
   const navigate = useNavigate();
   const isStaff = user?.role === 'staff';
 
-  const [lectures, setLectures] = useState([
-    { id: 'lec_1', title: 'Chapter 1: Components and Props', date: 'Oct 12, 2026', duration: '14:20' },
-    { id: 'lec_2', title: 'Chapter 2: State and Lifecycle', date: 'Oct 14, 2026', duration: '22:15' },
-  ]);
+  const [lectures, setLectures] = useState<any[]>([]);
 
   const handleUpload = () => {
     // Mock upload for now
@@ -36,11 +33,9 @@ const ClassroomView: React.FC = () => {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">React Advanced Course</h1>
+              <h1 className="text-xl font-bold text-gray-900">Classroom</h1>
               <div className="flex items-center text-xs text-gray-500 space-x-2 mt-0.5">
                 <span className="font-bold text-primary bg-purple-50 px-2 py-0.5 rounded">Room: {roomCode}</span>
-                <span>•</span>
-                <span>Instructor: Ranjith</span>
               </div>
             </div>
           </div>
@@ -85,6 +80,18 @@ const ClassroomView: React.FC = () => {
               </div>
             </div>
           ))}
+
+          {lectures.length === 0 && (
+             <div className="py-20 text-center bg-white rounded-3xl border border-gray-100 border-dashed">
+               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Video className="w-8 h-8 text-gray-300" />
+               </div>
+               <h3 className="text-lg font-bold text-gray-900 mb-2">No lectures uploaded yet</h3>
+               <p className="text-gray-500 text-sm max-w-sm mx-auto">
+                 {isStaff ? "Click the 'Upload Lecture' button in the top right to upload your first video." : "Wait for your instructor to upload a lecture here."}
+               </p>
+             </div>
+          )}
         </div>
       </div>
     </div>

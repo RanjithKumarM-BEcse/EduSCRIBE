@@ -13,10 +13,7 @@ const Dashboard: React.FC = () => {
 
   const isStaff = user?.role === 'staff';
 
-  const [classes, setClasses] = useState([
-    { id: '1', name: 'Introduction to React', code: 'CS301X', students: 45, lectures: 12 },
-    { id: '2', name: 'Advanced UI Design', code: 'DS402Y', students: 32, lectures: 8 },
-  ]);
+  const [classes, setClasses] = useState<any[]>([]);
 
   const handleCreateClass = (data: any) => {
     setClasses([...classes, { id: Math.random().toString(), students: 0, lectures: 0, ...data }]);

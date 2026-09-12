@@ -135,7 +135,7 @@ const LectureViewer: React.FC = () => {
       setIsSemanticSearching(true);
       setSemanticError('');
       
-      const apiKey = localStorage.getItem('groq_api_key');
+      const apiKey = localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY;
       if (!apiKey) {
         // MOCK SEMANTIC SEARCH FOR DEMOS WITHOUT API KEY
         setTimeout(() => {

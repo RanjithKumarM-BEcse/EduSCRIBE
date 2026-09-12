@@ -14,15 +14,20 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [apiKey, setApiKey] = useState(localStorage.getItem('groq_api_key') || '');
+  const [apiKey, setApiKey] = useState(localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY || '');
 
   if (!isOpen) return null;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      if (selectedFile.size > 25 * 1024 * 1024) {
+        alert("File is too large! Groq Whisper API only accepts files up to 25MB. Please choose a smaller video for the demo.");
+        return;
+      }
+      setFile(selectedFile);
       if (!title) {
-        setTitle(e.target.files[0].name.replace(/\.[^/.]+$/, ""));
+        setTitle(selectedFile.name.replace(/\.[^/.]+$/, ""));
       }
     }
   };

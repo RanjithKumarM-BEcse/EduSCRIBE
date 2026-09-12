@@ -130,68 +130,88 @@ const Dashboard: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
-          <div>
-            <h1 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">
-              {isStaff ? 'Teacher Dashboard' : 'Student Dashboard'}
-            </h1>
-            <p className="text-gray-500 text-lg">
-              {isStaff ? 'Manage your classrooms and upload accessible lectures.' : 'Join classrooms and watch synchronized transcripts.'}
-            </p>
-          </div>
-          <div className="mt-6 md:mt-0">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Classes</h1>
+          {isStaff && (
             <button 
-              onClick={() => isStaff ? setIsCreateOpen(true) : setIsJoinOpen(true)}
-              className="flex items-center space-x-2 bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-full font-bold shadow-soft hover:shadow-lg transition-all hover:-translate-y-0.5"
+              onClick={() => setIsCreateOpen(true)}
+              className="flex items-center space-x-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all"
             >
-              <Plus className="w-5 h-5" />
-              <span>{isStaff ? 'Create New Class' : 'Join a Classroom'}</span>
+              <Plus className="w-4 h-4" />
+              <span>Create New Class</span>
             </button>
-          </div>
+          )}
         </div>
 
+        {!isStaff && (
+          <div className="mb-10 w-full max-w-2xl">
+            <h3 className="text-sm font-bold text-gray-700 mb-2">Join a Classroom</h3>
+            <div className="flex space-x-2">
+              <input 
+                type="text" 
+                placeholder="Enter 6-digit room code..." 
+                className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all uppercase tracking-wider"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleJoinClass(e.currentTarget.value.toUpperCase());
+                    e.currentTarget.value = '';
+                  }
+                }}
+              />
+              <button 
+                onClick={(e) => {
+                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                  handleJoinClass(input.value.toUpperCase());
+                  input.value = '';
+                }}
+                className="bg-primary hover:bg-primary/90 text-white font-bold px-6 py-3 rounded-xl shadow-sm transition-all"
+              >
+                Join
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Classes Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {classes.map((cls) => (
             <div 
               key={cls.id} 
               onClick={() => navigate(`/classroom/${cls.roomCode}`)}
-              className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-soft transition-all border border-gray-100 hover:border-primary/20 cursor-pointer group hover:-translate-y-1"
+              className="bg-white rounded-2xl border border-gray-200 hover:border-primary shadow-sm overflow-hidden cursor-pointer group hover:-translate-y-1 transition-all"
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className={`p-3 rounded-2xl transition-colors ${isStaff ? 'bg-purple-50 text-primary group-hover:bg-primary group-hover:text-white' : 'bg-coral-pink/10 text-secondary group-hover:bg-secondary group-hover:text-white'}`}>
-                  <Video className="w-6 h-6" />
-                </div>
-                <span className="bg-gray-50 border border-gray-100 text-gray-600 text-xs font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider">
-                  {cls.roomCode}
-                </span>
+              <div className="h-32 bg-gray-100 relative w-full flex items-center justify-center overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20"></div>
+                <Video className="w-10 h-10 text-white opacity-50 z-10" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors">{cls.name}</h3>
-              <p className="text-sm text-gray-500 mb-6 font-medium">Instructor: {cls.instructorName || user?.name}</p>
-              
-              <div className="flex items-center space-x-4 border-t border-gray-50 pt-4">
-                <div className="flex items-center text-sm font-bold text-gray-400 group-hover:text-gray-600 transition-colors">
-                  <Users className="w-4 h-4 mr-1.5" />
-                  <span>{cls.studentsCount || 0} students</span>
+              <div className="p-5">
+                <div className="flex justify-between items-center mb-1">
+                  <h3 className="text-lg font-bold text-gray-900 truncate">{cls.name}</h3>
                 </div>
-                <div className="flex items-center text-sm font-bold text-gray-400 group-hover:text-gray-600 transition-colors">
-                  <PlayCircle className="w-4 h-4 mr-1.5" />
-                  <span>{cls.lecturesCount || 0} lectures</span>
+                <p className="text-xs text-gray-500 mb-4 truncate">{cls.instructorName}</p>
+                
+                <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                  <div className="text-xs font-bold text-primary bg-purple-50 px-2 py-1 rounded">
+                    {cls.roomCode}
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs font-bold text-gray-400">
+                    <span className="flex items-center"><Users className="w-3 h-3 mr-1" />{cls.studentsCount || 0}</span>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
           
-          {classes.length === 0 && (
-             <div className="col-span-full py-20 text-center">
-               <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Video className="w-10 h-10 text-gray-300" />
-               </div>
-               <h3 className="text-xl font-bold text-gray-900 mb-2">No classrooms yet</h3>
-               <p className="text-gray-500 max-w-md mx-auto">
-                 {isStaff ? "You haven't created any classes. Click the 'Create New Class' button to get started!" : "You haven't joined any classes yet. Click 'Join a Classroom' and enter your code."}
-               </p>
-             </div>
+          {isStaff && (
+            <div 
+              onClick={() => setIsCreateOpen(true)}
+              className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 hover:border-primary hover:bg-purple-50 flex flex-col items-center justify-center cursor-pointer transition-all min-h-[220px]"
+            >
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-gray-400">
+                <Plus className="w-6 h-6" />
+              </div>
+              <span className="font-bold text-gray-600">Create new class</span>
+            </div>
           )}
         </div>
       </main>

@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
-import { PlayCircle, Upload, ArrowLeft, Video, Clock } from 'lucide-react';
-
-const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api';
+import { PlayCircle, Upload, ArrowLeft, Video, Clock, Users, Copy, CheckCircle2 } from 'lucide-react';
 
 const ClassroomView: React.FC = () => {
   const { roomCode } = useParams<{ roomCode: string }>();
@@ -14,6 +11,8 @@ const ClassroomView: React.FC = () => {
 
   const [lectures, setLectures] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<any>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   useEffect(() => {
     const fetchRoom = () => {
@@ -25,7 +24,6 @@ const ClassroomView: React.FC = () => {
   }, [roomCode]);
 
   const handleUpload = () => {
-    // Mock upload for now
     alert('Video Upload Flow would open here. After upload, Groq Whisper transcribes the video!');
   };
 
@@ -33,105 +31,145 @@ const ClassroomView: React.FC = () => {
     navigate(`/classroom/${roomCode}/lecture/${id}`);
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, type: 'link' | 'code') => {
     navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
+    if (type === 'link') {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } else {
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Simple Header */}
+      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+         <div className="flex items-center space-x-4">
             <button 
               onClick={() => navigate('/dashboard')}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{roomData?.name || 'Classroom'}</h1>
-              <div className="flex items-center text-xs text-gray-500 space-x-2 mt-0.5">
-                <span 
-                  onClick={() => copyToClipboard(roomCode || '')}
-                  className="font-bold text-primary bg-purple-50 px-2 py-0.5 rounded cursor-pointer hover:bg-purple-100 transition-colors"
-                  title="Click to copy room code"
-                >
-                  Room: {roomCode}
-                </span>
-                <span>•</span>
-                <span 
-                  onClick={() => copyToClipboard(`${window.location.origin}/classroom/${roomCode}`)}
-                  className="font-semibold text-secondary cursor-pointer hover:underline"
-                  title="Click to copy invite link"
-                >
-                  Copy Invite Link
-                </span>
-                {roomData?.instructorName && (
-                  <>
-                    <span>•</span>
-                    <span>Instructor: {roomData.instructorName}</span>
-                  </>
-                )}
+            <div className="flex items-center space-x-2">
+               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <PlayCircle className="text-white w-5 h-5" />
+               </div>
+               <span className="font-bold text-xl text-gray-900">eduScribe</span>
+            </div>
+            <span className="text-gray-300 font-light text-xl px-2">/</span>
+            <span className="font-bold text-gray-700">{roomData?.name || 'Classroom'}</span>
+         </div>
+         <div className="flex items-center space-x-3 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+            <img src={user?.avatar} alt="avatar" className="w-6 h-6 rounded-full" />
+            <span className="text-sm font-bold text-gray-700">{user?.name}</span>
+         </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex flex-col lg:flex-row gap-8">
+        
+        {/* Left Column: Lectures */}
+        <div className="flex-1">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Past Lectures</h2>
+            {isStaff && (
+              <button 
+                onClick={handleUpload}
+                className="flex items-center space-x-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all text-sm"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload Lecture</span>
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {lectures.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-400">
+                  <Video className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-1">No lectures yet</h3>
+                <p className="text-gray-500 text-sm max-w-sm">
+                  {isStaff ? "Upload a video lecture to automatically generate a transcript." : "Your instructor hasn't uploaded any lectures yet."}
+                </p>
               </div>
+            ) : (
+              lectures.map(lecture => (
+                <div key={lecture.id} className="bg-white border border-gray-200 hover:border-primary/30 rounded-2xl p-4 flex items-center justify-between transition-all group">
+                   <div className="flex items-center space-x-4">
+                      <div className="w-24 h-16 bg-gray-100 rounded-lg relative overflow-hidden flex items-center justify-center">
+                         <Video className="w-6 h-6 text-gray-300" />
+                      </div>
+                      <div>
+                         <h4 className="font-bold text-gray-900">{lecture.title}</h4>
+                         <div className="flex items-center text-xs text-gray-500 mt-1">
+                            <Clock className="w-3 h-3 mr-1" />
+                            <span>{lecture.date}</span>
+                         </div>
+                      </div>
+                   </div>
+                   <button 
+                     onClick={() => handleViewLecture(lecture.id)}
+                     className="text-primary font-bold text-sm bg-purple-50 hover:bg-primary hover:text-white px-4 py-2 rounded-lg transition-colors"
+                   >
+                     View Transcript
+                   </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Room Details */}
+        <div className="w-full lg:w-80 space-y-6">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6">
+            <h3 className="font-bold text-gray-900 mb-4">Room Details</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Room Code</label>
+                <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+                  <span className="font-mono font-bold text-gray-900 tracking-wider">{roomCode}</span>
+                  <button 
+                    onClick={() => copyToClipboard(roomCode || '', 'code')}
+                    className="p-1.5 text-gray-400 hover:text-primary hover:bg-purple-50 rounded-lg transition-colors"
+                    title="Copy code"
+                  >
+                    {copiedCode ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Invite Link</label>
+                <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+                  <span className="font-mono text-xs text-gray-500 truncate mr-2">{window.location.origin}/join/{roomCode}</span>
+                  <button 
+                    onClick={() => copyToClipboard(`${window.location.origin}/join/${roomCode}`, 'link')}
+                    className="p-1.5 text-gray-400 hover:text-primary hover:bg-purple-50 rounded-lg transition-colors flex-shrink-0"
+                    title="Copy link"
+                  >
+                    {copiedLink ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between text-sm">
+               <span className="text-gray-500 font-medium">Students Joined:</span>
+               <span className="font-bold text-gray-900 flex items-center">
+                 <Users className="w-4 h-4 mr-1.5 text-gray-400" />
+                 {roomData?.studentsCount || 0}
+               </span>
             </div>
           </div>
-          
-          {isStaff && (
-            <button 
-              onClick={handleUpload}
-              className="flex items-center space-x-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-full font-bold shadow-soft transition-transform hover:-translate-y-0.5 text-sm"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Upload Lecture</span>
-            </button>
-          )}
         </div>
-      </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Course Lectures</h2>
-        
-        <div className="space-y-4">
-          {lectures.map((lec) => (
-            <div 
-              key={lec.id}
-              onClick={() => handleViewLecture(lec.id)}
-              className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all cursor-pointer flex items-center justify-between group"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-xl bg-purple-50 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
-                  <PlayCircle className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 text-lg group-hover:text-primary transition-colors">{lec.title}</h3>
-                  <div className="flex items-center text-sm text-gray-500 space-x-3 mt-1">
-                    <span className="flex items-center"><Video className="w-3.5 h-3.5 mr-1" /> Video + Transcript</span>
-                    <span>•</span>
-                    <span className="flex items-center"><Clock className="w-3.5 h-3.5 mr-1" /> {lec.duration}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="text-sm font-medium text-gray-400">
-                {lec.date}
-              </div>
-            </div>
-          ))}
-
-          {lectures.length === 0 && (
-             <div className="py-20 text-center bg-white rounded-3xl border border-gray-100 border-dashed">
-               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Video className="w-8 h-8 text-gray-300" />
-               </div>
-               <h3 className="text-lg font-bold text-gray-900 mb-2">No lectures uploaded yet</h3>
-               <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                 {isStaff ? "Click the 'Upload Lecture' button in the top right to upload your first video." : "Wait for your instructor to upload a lecture here."}
-               </p>
-             </div>
-          )}
-        </div>
-      </div>
+      </main>
     </div>
   );
 };

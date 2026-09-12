@@ -83,10 +83,88 @@ const LectureViewer: React.FC = () => {
     return `${m}:${s}`;
   };
 
+  const [searchMode, setSearchMode] = useState<'exact' | 'semantic'>('exact');
+  const [isSemanticSearching, setIsSemanticSearching] = useState(false);
+  const [semanticResults, setSemanticResults] = useState<number[]>([]);
+  const [semanticError, setSemanticError] = useState('');
+
   const transcriptList = lecture?.transcript || [];
-  const filteredTranscript = transcriptList.filter((item: any) => 
-    item.text.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+
+  // Semantic Search Effect
+  useEffect(() => {
+    if (searchMode !== 'semantic' || !searchQuery.trim()) {
+      setSemanticResults([]);
+      setSemanticError('');
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setIsSemanticSearching(true);
+      setSemanticError('');
+      
+      const apiKey = localStorage.getItem('groq_api_key');
+      if (!apiKey) {
+        setSemanticError('Groq API Key required for semantic search.');
+        setIsSemanticSearching(false);
+        return;
+      }
+
+      try {
+        const transcriptText = transcriptList.map((t: any) => `[START:${t.start}] ${t.text}`).join('\n');
+        
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'llama3-8b-8192',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a semantic search engine. You are given a transcript with [START:timestamp] tags. Find ALL segments that semantically match or answer the user\'s query. Return ONLY a comma-separated list of the START timestamps (e.g. "12.5, 45.0"). If none match, return "NONE". Do not include any other text.'
+              },
+              {
+                role: 'user',
+                content: `Transcript:\n${transcriptText}\n\nQuery: ${searchQuery}`
+              }
+            ],
+            temperature: 0,
+            max_tokens: 100
+          })
+        });
+
+        if (!res.ok) throw new Error('API Error');
+        
+        const data = await res.json();
+        const content = data.choices[0].message.content.trim();
+        
+        if (content === 'NONE') {
+          setSemanticResults([-1]); // denotes no results
+        } else {
+          const times = content.split(',').map((s: string) => parseFloat(s.trim())).filter((n: number) => !isNaN(n));
+          setSemanticResults(times);
+        }
+      } catch (err) {
+        setSemanticError('Search failed.');
+      } finally {
+        setIsSemanticSearching(false);
+      }
+    }, 800);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery, searchMode, transcriptList]);
+
+  const filteredTranscript = transcriptList.filter((item: any) => {
+    if (!searchQuery.trim()) return true;
+    if (searchMode === 'exact') {
+      return item.text.toLowerCase().includes(searchQuery.toLowerCase());
+    } else {
+      if (semanticResults.length === 0 || semanticResults.includes(-1)) return false;
+      return semanticResults.includes(item.start);
+    }
+  });
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
@@ -125,21 +203,47 @@ const LectureViewer: React.FC = () => {
         {/* Right Side: Transcript (35%) */}
         <div className="flex flex-col w-full lg:w-[35%] bg-white border-t lg:border-t-0 lg:border-l border-gray-200 h-[60%] lg:h-full shrink-0">
           <div className="p-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
-            <h2 className="font-bold text-gray-900 mb-3 flex items-center">
-              AI Synchronized Transcript
-            </h2>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="font-bold text-gray-900 flex items-center">
+                AI Transcript
+              </h2>
+              <div className="flex bg-gray-200 p-0.5 rounded-lg">
+                <button 
+                  onClick={() => setSearchMode('exact')}
+                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all ${searchMode === 'exact' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Exact
+                </button>
+                <button 
+                  onClick={() => setSearchMode('semantic')}
+                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all ${searchMode === 'semantic' ? 'bg-primary text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Semantic
+                </button>
+              </div>
+            </div>
+            
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
+                {isSemanticSearching ? (
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Search className={`h-4 w-4 ${searchMode === 'semantic' ? 'text-primary' : 'text-gray-400'}`} />
+                )}
               </div>
               <input 
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search transcript..." 
-                className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                placeholder={searchMode === 'semantic' ? "Ask a question about the video..." : "Search exact words..."} 
+                className={`w-full pl-10 pr-4 py-2 rounded-xl border outline-none transition-all text-sm ${
+                  searchMode === 'semantic' 
+                    ? 'border-purple-200 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-purple-50/30' 
+                    : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20'
+                }`}
               />
             </div>
+            {semanticError && <p className="text-xs text-red-500 mt-2 font-medium">{semanticError}</p>}
           </div>
           
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -169,7 +273,11 @@ const LectureViewer: React.FC = () => {
             
             {filteredTranscript.length === 0 && (
               <div className="text-center py-10 text-gray-500 text-sm">
-                No matching transcript found.
+                {searchMode === 'semantic' && isSemanticSearching 
+                  ? 'AI is analyzing the transcript...' 
+                  : searchQuery 
+                    ? 'No matching transcript found.' 
+                    : 'No transcript available.'}
               </div>
             )}
           </div>

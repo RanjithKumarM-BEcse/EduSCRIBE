@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { PlayCircle, Upload, ArrowLeft, Video, Clock, Users, Copy, CheckCircle2 } from 'lucide-react';
 import UploadLectureModal from '../components/UploadLectureModal';
+import { saveVideo } from '../utils/indexedDB';
 
 const ClassroomView: React.FC = () => {
   const { roomCode } = useParams<{ roomCode: string }>();
@@ -28,22 +29,29 @@ const ClassroomView: React.FC = () => {
     fetchRoom();
   }, [roomCode]);
 
-  const handleUploadComplete = (title: string, file: File, duration: number, transcript: any[]) => {
-    // Generate object URL to play video locally
-    const videoUrl = URL.createObjectURL(file);
+  const handleUploadComplete = async (title: string, file: File, duration: number, transcript: any[]) => {
     
+    const lectureId = Math.random().toString(36).substring(2, 9);
+    
+    // Save the actual video file to IndexedDB so it survives page refreshes!
+    try {
+      await saveVideo(lectureId, file);
+    } catch (err) {
+      console.error("Failed to save video to DB", err);
+    }
+
     const newLecture = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: lectureId,
       title,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      videoUrl, // local blob URL
-      transcript // Use transcript passed from modal (real or mock)
+      videoId: lectureId, 
+      transcript 
     };
 
     const updatedLectures = [...lectures, newLecture];
     setLectures(updatedLectures);
     
-    // Save to local storage
+    // Save metadata to local storage
     localStorage.setItem(`eduscribe_lectures_${roomCode}`, JSON.stringify(updatedLectures));
 
     // Update room lecture count

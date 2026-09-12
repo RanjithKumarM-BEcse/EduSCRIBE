@@ -12,14 +12,38 @@ const LectureViewer: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   
   const [lecture, setLecture] = useState<any>(null);
+  const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    let activeUrl: string | null = null;
+    
     if (!roomCode || !lectureId) return;
     const savedLectures = JSON.parse(localStorage.getItem(`eduscribe_lectures_${roomCode}`) || '[]');
     const found = savedLectures.find((l: any) => l.id === lectureId);
+    
     if (found) {
       setLecture(found);
+      
+      // Load video from IndexedDB
+      if (found.videoId) {
+        import('../utils/indexedDB').then(({ getVideo }) => {
+          getVideo(found.videoId).then((file) => {
+            if (file) {
+              activeUrl = URL.createObjectURL(file);
+              setVideoObjectUrl(activeUrl);
+            }
+          }).catch(console.error);
+        });
+      } else if (found.videoUrl) {
+         // Fallback for older lectures before IndexedDB
+         setVideoObjectUrl(found.videoUrl);
+      }
     }
+    
+    // Cleanup blob url on unmount
+    return () => {
+       if (activeUrl) URL.revokeObjectURL(activeUrl);
+    };
   }, [roomCode, lectureId]);
 
   // Update current time as video plays
@@ -82,16 +106,16 @@ const LectureViewer: React.FC = () => {
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         {/* Left Side: Video Player (65%) */}
         <div className="w-full lg:w-[65%] h-[40%] lg:h-full bg-black flex flex-col relative shrink-0">
-          {!lecture?.videoUrl ? (
+          {!videoObjectUrl ? (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8 text-center bg-gray-900">
                <Video className="w-12 h-12 mb-4 text-gray-600" />
-               <p className="text-gray-400">Video is no longer available in this browser session.</p>
-               <p className="text-xs mt-2 text-gray-500">Demo uploads are temporary and clear upon refresh.</p>
+               <p className="text-gray-400">Loading video...</p>
+               <p className="text-xs mt-2 text-gray-500">If this takes too long, the video may be missing from local storage.</p>
             </div>
           ) : (
             <video 
               ref={videoRef}
-              src={lecture.videoUrl}
+              src={videoObjectUrl}
               controls
               className="w-full h-full object-contain bg-black"
             />

@@ -133,25 +133,6 @@ const Dashboard: React.FC = () => {
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center space-x-4">
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Classes</h1>
-            <button 
-              onClick={() => {
-                const data = {
-                  classes: JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]'),
-                  myClasses: JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user?.id}`) || '[]')
-                };
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'eduscribe_demo_database.json';
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-              className="text-xs font-bold text-gray-500 hover:text-primary transition-colors bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm"
-              title="Download Demo Data"
-            >
-              Export JSON
-            </button>
           </div>
           {isStaff && (
             <button 

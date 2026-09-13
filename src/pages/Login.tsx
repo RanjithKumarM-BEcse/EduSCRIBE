@@ -101,7 +101,7 @@ const Login: React.FC = () => {
             By signing in, you agree to our Terms of Service and Privacy Policy.
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

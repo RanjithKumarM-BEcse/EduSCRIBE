@@ -446,7 +446,7 @@ const LectureViewer: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

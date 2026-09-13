@@ -89,13 +89,33 @@ const ClassroomView: React.FC = () => {
         onUpload={handleUploadComplete} 
       />
 
+      {/* Simple Header */}
+      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+         <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1"
+              aria-label="Back to Dashboard"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="flex items-center space-x-2">
+               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <PlayCircle className="text-white w-5 h-5" aria-hidden="true" />
+               </div>
+               <span className="font-bold text-xl text-gray-900">eduScribe</span>
+            </div>
+            <span className="text-gray-300 font-light text-xl px-2">/</span>
+            <span className="font-bold text-gray-700">{roomData?.name || 'Classroom'}</span>
+         </div>
+         <div className="flex items-center space-x-3 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
             <img src={user?.avatar} alt="avatar" className="w-6 h-6 rounded-full" />
             <span className="text-sm font-bold text-gray-700">{user?.name}</span>
          </div>
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex flex-col lg:flex-row gap-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex flex-col lg:flex-row gap-8">
         
         {/* Left Column: Lectures */}
         <div className="flex-1">
@@ -139,7 +159,10 @@ const ClassroomView: React.FC = () => {
                       </div>
                    </div>
                    <button 
-                     onClick={() => handleViewLecture(lecture.id)}
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       handleViewLecture(lecture.id);
+                     }}
                      className="text-primary font-bold text-sm bg-purple-50 hover:bg-primary hover:text-white px-4 py-2 rounded-lg transition-colors"
                    >
                      View Transcript

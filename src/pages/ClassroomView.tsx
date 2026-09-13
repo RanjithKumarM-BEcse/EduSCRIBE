@@ -32,12 +32,39 @@ const ClassroomView: React.FC = () => {
   const handleUploadComplete = async (title: string, file: File, duration: number, transcript: any[]) => {
     
     const lectureId = Math.random().toString(36).substring(2, 9);
-    
-    // Save the actual video file to IndexedDB so it survives page refreshes!
+    let s3Url = null;
+
+    // Try to upload to S3 first if configured
     try {
-      await saveVideo(lectureId, file);
+      const res = await fetch('/api/s3-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type })
+      });
+
+      if (res.ok) {
+        const { url, publicUrl } = await res.json();
+        const uploadRes = await fetch(url, {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type },
+          body: file
+        });
+        
+        if (uploadRes.ok) {
+          s3Url = publicUrl;
+        }
+      }
     } catch (err) {
-      console.error("Failed to save video to DB", err);
+      console.log("S3 upload not configured or failed, falling back to local DB");
+    }
+    
+    if (!s3Url) {
+      // Save the actual video file to IndexedDB so it survives page refreshes!
+      try {
+        await saveVideo(lectureId, file);
+      } catch (err) {
+        console.error("Failed to save video to DB", err);
+      }
     }
 
     const newLecture = {
@@ -45,6 +72,7 @@ const ClassroomView: React.FC = () => {
       title,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       videoId: lectureId, 
+      videoUrl: s3Url, // Use S3 URL if available
       transcript 
     };
 
@@ -61,6 +89,8 @@ const ClassroomView: React.FC = () => {
       allSaved[roomIndex].lecturesCount = (allSaved[roomIndex].lecturesCount || 0) + 1;
       localStorage.setItem('eduscribe_all_classes', JSON.stringify(allSaved));
     }
+
+    setIsUploadOpen(false);
   };
 
   const handleViewLecture = (id: string) => {

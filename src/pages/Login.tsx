@@ -2,30 +2,50 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { PlayCircle } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleTestLogin = () => {
-    setLoading(true);
-    setTimeout(() => {
-      const randomId = Math.floor(Math.random() * 10000);
-      const mockUser = {
-        id: `demo_user_${randomId}`,
-        email: `demo${randomId}@eduscribe.com`,
-        name: 'Demo User',
-        avatar: 'https://ui-avatars.com/api/?name=Demo+User&background=6C47FF&color=fff',
-        role: null as any
-      };
-      
-      const mockToken = `MOCK::${btoa(JSON.stringify(mockUser))}`;
-      login(mockUser, mockToken);
-      navigate('/role-selection');
-      setLoading(false);
-    }, 400);
-  };
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      setError('');
+      try {
+        // Fetch user info from Google
+        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        });
+        
+        if (!res.ok) throw new Error('Failed to fetch user profile.');
+        
+        const userInfo = await res.json();
+        
+        const user = {
+          id: userInfo.sub,
+          email: userInfo.email,
+          name: userInfo.name,
+          avatar: userInfo.picture,
+          role: null as any
+        };
+        
+        const mockToken = `GOOGLE::${btoa(JSON.stringify(user))}`;
+        login(user, mockToken);
+        navigate('/role-selection');
+      } catch (err) {
+        console.error(err);
+        setError('Authentication failed. Please try again.');
+        setLoading(false);
+      }
+    },
+    onError: (errorResponse) => {
+      console.error(errorResponse);
+      setError('Google login failed.');
+    },
+  });
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row font-sans">
@@ -78,7 +98,7 @@ const Login: React.FC = () => {
           <p className="text-gray-500 mb-8 font-medium">Click below to enter the platform instantly.</p>
 
           <button 
-            onClick={handleTestLogin}
+            onClick={() => handleGoogleLogin()}
             disabled={loading}
             className="w-full flex items-center justify-center bg-gray-900 hover:bg-black text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-[0.98] group"
           >
@@ -92,10 +112,12 @@ const Login: React.FC = () => {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
-                Sign In to Platform
+                Sign In with Google
               </>
             )}
           </button>
+          
+          {error && <p className="mt-4 text-sm text-red-500 font-bold">{error}</p>}
           
           <p className="mt-8 text-xs text-gray-400 font-medium">
             By signing in, you agree to our Terms of Service and Privacy Policy.

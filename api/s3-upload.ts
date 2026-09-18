@@ -13,17 +13,17 @@ export default async function handler(req: any, res: any) {
   
   try {
     const s3 = new S3Client({
-      region: process.env.VITE_AWS_REGION || process.env.AWS_REGION || "us-east-1",
+      region: "eu-north-1", // Hardcoded from user screenshot to bypass Vercel env bugs
       credentials: {
-        accessKeyId: process.env.VITE_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.VITE_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY || "",
+        accessKeyId: process.env.VITE_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || process.env.MY_AWS_ACCESS_KEY_ID || "",
+        secretAccessKey: process.env.VITE_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY || process.env.MY_AWS_SECRET_ACCESS_KEY || "",
       }
     });
 
     const key = `lectures/${Date.now()}-${filename.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
 
     const command = new PutObjectCommand({
-      Bucket: process.env.VITE_AWS_S3_BUCKET || process.env.AWS_S3_BUCKET,
+      Bucket: "eduscribe-videos-123", // Hardcoded from user screenshot
       Key: key,
       ContentType: contentType,
     });
@@ -33,7 +33,7 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json({ 
       url, 
       key, 
-      publicUrl: `https://${process.env.VITE_AWS_S3_BUCKET || process.env.AWS_S3_BUCKET}.s3.${process.env.VITE_AWS_REGION || process.env.AWS_REGION || "us-east-1"}.amazonaws.com/${key}`
+      publicUrl: `https://eduscribe-videos-123.s3.eu-north-1.amazonaws.com/${key}`
     });
   } catch (error: any) {
     console.error("S3 Presign Error:", error);

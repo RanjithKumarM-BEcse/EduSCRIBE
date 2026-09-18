@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Video, Users, Plus, LogOut, PlayCircle } from 'lucide-react';
+import { Video, Users, Plus, LogOut, PlayCircle, Trash2 } from 'lucide-react';
 import CreateClassModal from '../components/CreateClassModal';
 import JoinClassModal from '../components/JoinClassModal';
 import ProfileModal from '../components/ProfileModal';
@@ -88,6 +88,26 @@ const Dashboard: React.FC = () => {
       setClasses([...classes, foundClass]);
     }
     navigate(`/classroom/${code}`);
+  };
+
+  const handleDeleteClass = (e: React.MouseEvent, classId: string, roomCode: string) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to permanently delete this class? This cannot be undone.')) {
+      // Remove from all classes
+      const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+      const filteredAll = allSaved.filter((c: any) => c.id !== classId);
+      localStorage.setItem('eduscribe_all_classes', JSON.stringify(filteredAll));
+
+      // Remove from my classes (for creator)
+      if (user) {
+        const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
+        const filteredMy = myClassIds.filter((code: string) => code !== roomCode);
+        localStorage.setItem(`eduscribe_my_classes_${user.id}`, JSON.stringify(filteredMy));
+      }
+
+      // Update state
+      setClasses(classes.filter(c => c.id !== classId));
+    }
   };
 
   return (
@@ -200,7 +220,17 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="p-5">
                 <div className="flex justify-between items-center mb-1">
-                  <h3 className="text-lg font-bold text-gray-900 truncate">{cls.name}</h3>
+                  <h3 className="text-lg font-bold text-gray-900 truncate pr-2">{cls.name}</h3>
+                  {user?.id === cls.instructorId && (
+                    <button
+                      onClick={(e) => handleDeleteClass(e, cls.id, cls.roomCode)}
+                      className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-colors shrink-0"
+                      title="Delete Class"
+                      aria-label="Delete Class"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
                 <p className="text-xs text-gray-500 mb-4 truncate">{cls.instructorName}</p>
                 

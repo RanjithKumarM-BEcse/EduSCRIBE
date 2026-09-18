@@ -46,8 +46,11 @@ const LectureViewer: React.FC = () => {
       if (found) {
         setLecture(found);
         
-        // Load video from IndexedDB only if we haven't loaded it yet
-        if (found.videoId && !videoObjectUrl) {
+        if (found.videoUrl && !videoObjectUrl) {
+          // Prioritize S3 public URL if available
+          setVideoObjectUrl(found.videoUrl);
+        } else if (found.videoId && !videoObjectUrl) {
+          // Fallback to local IndexedDB
           import('../utils/indexedDB').then(({ getVideo }) => {
             getVideo(found.videoId).then((file) => {
               if (file) {
@@ -56,8 +59,6 @@ const LectureViewer: React.FC = () => {
               }
             }).catch(console.error);
           });
-        } else if (found.videoUrl && !videoObjectUrl) {
-           setVideoObjectUrl(found.videoUrl);
         }
       }
     };

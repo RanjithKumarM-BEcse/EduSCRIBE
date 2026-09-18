@@ -4,7 +4,7 @@ import { X, UploadCloud, Video, CheckCircle2 } from 'lucide-react';
 interface UploadLectureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (title: string, file: File, duration: number, transcript: any[]) => void;
+  onUpload: (title: string, file: File, duration: number, transcript: any[]) => Promise<void> | void;
 }
 
 const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose, onUpload }) => {
@@ -100,52 +100,69 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
       const videoUrl = URL.createObjectURL(file);
       const tempVideo = document.createElement('video');
       tempVideo.src = videoUrl;
-      tempVideo.onloadedmetadata = () => {
+      
+      tempVideo.onloadedmetadata = async () => {
          const duration = tempVideo.duration;
+         
+         setStatusText('Uploading to S3...');
+         setProgress(98);
+         
+         try {
+           await onUpload(title, file, duration, finalTranscript || generateMockTranscript(title, duration));
+         } catch (e) {
+           console.error("Upload failed", e);
+         }
          
          setProgress(100);
          setStatusText('Complete!');
          
-         setTimeout(() => {
-           onUpload(title, file, duration, finalTranscript || generateMockTranscript(title, duration));
-           URL.revokeObjectURL(videoUrl);
-           setIsUploading(false);
-           setProgress(0);
-           setFile(null);
-           setTitle('');
-           onClose();
-         }, 800);
+         URL.revokeObjectURL(videoUrl);
+         setIsUploading(false);
+         setProgress(0);
+         setFile(null);
+         setTitle('');
+         onClose();
       };
 
       // Fallback if metadata fails to load quickly
-      setTimeout(() => {
+      setTimeout(async () => {
          if (tempVideo.readyState === 0) {
+            setStatusText('Uploading to S3...');
+            setProgress(98);
+            
+            try {
+              await onUpload(title, file, 45, finalTranscript || generateMockTranscript(title, 45));
+            } catch (e) {}
+            
             setProgress(100);
             setStatusText('Complete!');
-            setTimeout(() => {
-              onUpload(title, file, 45, finalTranscript || generateMockTranscript(title, 45));
-              setIsUploading(false);
-              setProgress(0);
-              setFile(null);
-              setTitle('');
-              onClose();
-            }, 800);
+            
+            setIsUploading(false);
+            setProgress(0);
+            setFile(null);
+            setTitle('');
+            onClose();
          }
       }, 1000);
 
     } catch (err: any) {
       alert(`Groq AI Error: ${err.message}\n\nFalling back to mock transcript.`);
       // Proceed with mock transcript
+      setStatusText('Uploading to S3...');
+      setProgress(98);
+      
+      try {
+        await onUpload(title, file, 45, generateMockTranscript(title, 45));
+      } catch (e) {}
+      
       setProgress(100);
       setStatusText('Complete (using mock)!');
-      setTimeout(() => {
-        onUpload(title, file, 45, generateMockTranscript(title, 45));
-        setIsUploading(false);
-        setProgress(0);
-        setFile(null);
-        setTitle('');
-        onClose();
-      }, 800);
+      
+      setIsUploading(false);
+      setProgress(0);
+      setFile(null);
+      setTitle('');
+      onClose();
     }
   };
 

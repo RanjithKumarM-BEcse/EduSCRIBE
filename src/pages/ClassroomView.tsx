@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { PlayCircle, Upload, ArrowLeft, Video, Clock, Users, Copy, CheckCircle2 } from 'lucide-react';
+import { PlayCircle, Upload, ArrowLeft, Video, Clock, Users, Copy, CheckCircle2, Trash2 } from 'lucide-react';
 import UploadLectureModal from '../components/UploadLectureModal';
 import { saveVideo } from '../utils/indexedDB';
 
@@ -91,6 +91,38 @@ const ClassroomView: React.FC = () => {
     }
 
     setIsUploadOpen(false);
+  };
+
+  const handleDeleteLecture = async (lectureId: string, videoUrl?: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this lecture?")) return;
+
+    // Remove from UI state and local storage immediately
+    const updatedLectures = lectures.filter(l => l.id !== lectureId);
+    setLectures(updatedLectures);
+    localStorage.setItem(`eduscribe_lectures_${roomCode}`, JSON.stringify(updatedLectures));
+
+    // Update lectures count
+    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
+    const roomIndex = allSaved.findIndex((r: any) => r.roomCode === roomCode);
+    if (roomIndex >= 0) {
+      allSaved[roomIndex].lecturesCount = Math.max(0, (allSaved[roomIndex].lecturesCount || 0) - 1);
+      localStorage.setItem('eduscribe_all_classes', JSON.stringify(allSaved));
+    }
+
+    // Try to delete from S3
+    if (videoUrl) {
+      try {
+        const urlObj = new URL(videoUrl);
+        const key = urlObj.pathname.substring(1); // removes leading '/'
+        await fetch('/api/s3-delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key })
+        });
+      } catch (err) {
+        console.error("Failed to delete from S3", err);
+      }
+    }
   };
 
   const handleViewLecture = (id: string) => {
@@ -188,15 +220,30 @@ const ClassroomView: React.FC = () => {
                          </div>
                       </div>
                    </div>
-                   <button 
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       handleViewLecture(lecture.id);
-                     }}
-                     className="text-primary font-bold text-sm bg-purple-50 hover:bg-primary hover:text-white px-4 py-2 rounded-lg transition-colors"
-                   >
-                     View Transcript
-                   </button>
+                    <div className="flex items-center space-x-3">
+                       {isStaff && (
+                         <button
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             handleDeleteLecture(lecture.id, lecture.videoUrl);
+                           }}
+                           className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                           title="Delete Lecture"
+                           aria-label="Delete Lecture"
+                         >
+                           <Trash2 className="w-5 h-5" />
+                         </button>
+                       )}
+                       <button 
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handleViewLecture(lecture.id);
+                         }}
+                         className="text-primary font-bold text-sm bg-purple-50 hover:bg-primary hover:text-white px-4 py-2 rounded-lg transition-colors"
+                       >
+                         View Transcript
+                       </button>
+                    </div>
                 </div>
               ))
             )}

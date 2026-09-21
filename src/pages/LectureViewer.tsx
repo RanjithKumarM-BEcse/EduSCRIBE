@@ -237,7 +237,7 @@ const LectureViewer: React.FC = () => {
       } catch (err) {
         console.warn('Groq API failed, falling back to mock search:', err);
         performMockSearch();
-        setSemanticError('AI API unavailable. Using offline semantic search.');
+        // Silently fallback without showing an error to the user
       } finally {
         setIsSemanticSearching(false);
       }

@@ -137,44 +137,49 @@ const LectureViewer: React.FC = () => {
       setSemanticError('');
       
       const apiKey = localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY;
-      if (!apiKey) {
+
+      const performMockSearch = () => {
+         const query = searchQuery.toLowerCase();
+         const matchIndexes: number[] = [];
+         
+         // Simple mock semantic engine based on keywords
+         transcriptList.forEach((t: any, idx: number) => {
+           const text = t.text.toLowerCase();
+           // Simulate AI understanding meaning instead of exact words
+           if (
+             (query.includes('math') && text.includes('formula')) ||
+             (query.includes('hello') && text.includes('welcome')) ||
+             (query.includes('important') && text.includes('crucial')) ||
+             (query.includes('save') && text.includes('data')) ||
+             (query.includes('data') && text.includes('save')) ||
+             (query.includes('find') && text.includes('search')) ||
+             (query.includes('laugh') && text.includes('smil')) ||
+             (query.includes('smil') && text.includes('laugh'))
+           ) {
+              matchIndexes.push(idx);
+           } else if (text.includes(query)) {
+              matchIndexes.push(idx);
+           }
+         });
+
+         if (matchIndexes.length > 0) {
+            setSemanticResults(matchIndexes);
+            handleTranscriptClick(transcriptList[matchIndexes[0]].start); // Instantly jump!
+            
+            // Scroll to the transcript block
+            setTimeout(() => {
+              const el = document.getElementById(`transcript-block-${matchIndexes[0]}`);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+         } else {
+            setSemanticResults([-1]);
+         }
+      };
+
+      if (!apiKey || apiKey === 'your_groq_api_key' || apiKey === 'undefined') {
         // MOCK SEMANTIC SEARCH FOR DEMOS WITHOUT API KEY
         setTimeout(() => {
-           const query = searchQuery.toLowerCase();
-           const matchIndexes: number[] = [];
-           
-           // Simple mock semantic engine based on keywords
-           transcriptList.forEach((t: any, idx: number) => {
-             const text = t.text.toLowerCase();
-             // Simulate AI understanding meaning instead of exact words
-             if (
-               (query.includes('math') && text.includes('formula')) ||
-               (query.includes('hello') && text.includes('welcome')) ||
-               (query.includes('important') && text.includes('crucial')) ||
-               (query.includes('save') && text.includes('data')) ||
-               (query.includes('data') && text.includes('save')) ||
-               (query.includes('find') && text.includes('search')) ||
-               (query.includes('laugh') && text.includes('smil')) ||
-               (query.includes('smil') && text.includes('laugh'))
-             ) {
-                matchIndexes.push(idx);
-             } else if (text.includes(query)) {
-                matchIndexes.push(idx);
-             }
-           });
-
-           if (matchIndexes.length > 0) {
-              setSemanticResults(matchIndexes);
-              handleTranscriptClick(transcriptList[matchIndexes[0]].start); // Instantly jump!
-              
-              // Scroll to the transcript block
-              setTimeout(() => {
-                const el = document.getElementById(`transcript-block-${matchIndexes[0]}`);
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }, 100);
-           } else {
-              setSemanticResults([-1]);
-           }
+           performMockSearch();
            setIsSemanticSearching(false);
         }, 1200); // simulate network delay
         return;
@@ -230,7 +235,9 @@ const LectureViewer: React.FC = () => {
           }
         }
       } catch (err) {
-        setSemanticError('Search failed.');
+        console.warn('Groq API failed, falling back to mock search:', err);
+        performMockSearch();
+        setSemanticError('AI API unavailable. Using offline semantic search.');
       } finally {
         setIsSemanticSearching(false);
       }

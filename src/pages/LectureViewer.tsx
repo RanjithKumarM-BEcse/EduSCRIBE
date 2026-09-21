@@ -153,7 +153,9 @@ const LectureViewer: React.FC = () => {
                (query.includes('important') && text.includes('crucial')) ||
                (query.includes('save') && text.includes('data')) ||
                (query.includes('data') && text.includes('save')) ||
-               (query.includes('find') && text.includes('search'))
+               (query.includes('find') && text.includes('search')) ||
+               (query.includes('laugh') && text.includes('smil')) ||
+               (query.includes('smil') && text.includes('laugh'))
              ) {
                 matchIndexes.push(idx);
              } else if (text.includes(query)) {
@@ -192,7 +194,7 @@ const LectureViewer: React.FC = () => {
             messages: [
               {
                 role: 'system',
-                content: 'You are a semantic search engine. You are given a transcript with [ID:index] tags. Find ALL segments that semantically match or answer the user\'s query. Return ONLY a comma-separated list of the IDs (e.g. "0, 2"). If none match, return "NONE". Do not include any other text.'
+                content: 'You are an advanced semantic search engine. You are given a transcript with [ID:index] tags. Find ALL segments that semantically match the user\'s query, focusing on synonyms, related concepts, and meanings (e.g., if the user searches "laughing", you should match "smiling", "chuckling", etc.). Return ONLY a comma-separated list of the IDs (e.g. "0, 2"). If none match conceptually, return "NONE". Do not include any other text.'
               },
               {
                 role: 'user',

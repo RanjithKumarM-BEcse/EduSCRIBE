@@ -154,7 +154,9 @@ const LectureViewer: React.FC = () => {
              (query.includes('data') && text.includes('save')) ||
              (query.includes('find') && text.includes('search')) ||
              (query.includes('laugh') && text.includes('smil')) ||
-             (query.includes('smil') && text.includes('laugh'))
+             (query.includes('smil') && text.includes('laugh')) ||
+             (query.includes('grin') && text.includes('smil')) ||
+             (query.includes('smil') && text.includes('grin'))
            ) {
               matchIndexes.push(idx);
            } else if (text.includes(query)) {

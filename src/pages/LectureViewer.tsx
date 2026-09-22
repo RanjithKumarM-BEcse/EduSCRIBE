@@ -197,7 +197,7 @@ const LectureViewer: React.FC = () => {
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: 'groq/compound',
+            model: 'qwen/qwen3.8-27b',
             messages: [
               {
                 role: 'system',

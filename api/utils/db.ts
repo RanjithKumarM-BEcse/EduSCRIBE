@@ -1,14 +1,22 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
-const client = new DynamoDBClient({
-  region: 'eu-north-1', // Hardcoded because Vercel automatically overrides AWS_REGION with its own lambda region
-  credentials: {
-    accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID as string,
-    secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY as string
-  }
-});
+let cachedClient: DynamoDBDocumentClient | null = null;
 
-export const docClient = DynamoDBDocumentClient.from(client);
+export const getDocClient = () => {
+  if (cachedClient) return cachedClient;
+  
+  const client = new DynamoDBClient({
+    region: 'eu-north-1',
+    credentials: {
+      accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY || ''
+    }
+  });
+  
+  cachedClient = DynamoDBDocumentClient.from(client);
+  return cachedClient;
+};
+
 export const TABLE_NAME = "eduScribe_Data";
 

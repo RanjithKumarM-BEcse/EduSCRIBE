@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middlewares/auth';
-import { docClient, TABLE_NAME } from '../utils/db';
+import { AuthRequest } from '../middlewares/auth.js';
+import { getDocClient, TABLE_NAME } from '../utils/db.js';
 import { PutCommand, QueryCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 const generateRoomCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -27,6 +27,8 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
       studentsCount: 0,
       lecturesCount: 0
     };
+
+    const docClient = getDocClient();
 
     // Save Room
     await docClient.send(new PutCommand({
@@ -55,6 +57,8 @@ export const getMyRooms = async (req: AuthRequest, res: Response): Promise<void>
   try {
     const user = req.user;
     if (!user) { res.status(401).json({ message: 'Unauthorized' }); return; }
+
+    const docClient = getDocClient();
 
     const relations = await docClient.send(new QueryCommand({
       TableName: TABLE_NAME,
@@ -95,6 +99,8 @@ export const joinRoom = async (req: AuthRequest, res: Response): Promise<void> =
     const { roomCode, password } = req.body;
     const user = req.user;
     if (!user) { res.status(401).json({ message: 'Unauthorized' }); return; }
+
+    const docClient = getDocClient();
 
     const roomRes = await docClient.send(new GetCommand({
       TableName: TABLE_NAME,

@@ -69,10 +69,12 @@ const Dashboard: React.FC = () => {
           studentsCount: 0 
         }]);
       } else {
-        alert("Failed to create room in cloud DB");
+        const errData = await res.json();
+        alert(`Backend Error: ${errData.message}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(`Network Error: ${err.message}`);
     }
   };
 

@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth';
-import { mockDB } from '../utils/db';
+import { docClient, TABLE_NAME } from '../utils/db';
+import { PutCommand, QueryCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 const generateRoomCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
@@ -8,15 +9,14 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
   try {
     const { name, isPublic, password } = req.body;
     const user = req.user;
-    if (!user) {
-      res.status(403).json({ message: 'Unauthorized' });
-      return;
-    }
+    if (!user) { res.status(403).json({ message: 'Unauthorized' }); return; }
 
     const roomCode = generateRoomCode();
     const now = new Date().toISOString();
 
     const newRoom = {
+      PK: `ROOM#${roomCode}`,
+      SK: 'METADATA',
       roomCode,
       name,
       instructorId: user.id,
@@ -28,19 +28,26 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
       lecturesCount: 0
     };
 
-    // Save to Mock DB
-    mockDB.rooms.set(roomCode, newRoom);
+    // Save Room
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: newRoom
+    }));
 
-    // Save relation to user
-    if (!mockDB.userRooms.has(user.id)) {
-      mockDB.userRooms.set(user.id, new Set());
-    }
-    mockDB.userRooms.get(user.id)!.add(roomCode);
+    // Save User-Room Relation
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        PK: `USER#${user.id}`,
+        SK: `ROOM#${roomCode}`,
+        joinedAt: now
+      }
+    }));
 
     res.status(201).json({ roomCode, name, isPublic });
   } catch (error: any) {
     console.error('Create room error:', error);
-    res.status(500).json({ message: 'Cloud DB Error: ' + error.message });
+    res.status(500).json({ message: 'DynamoDB Error: ' + error.message });
   }
 };
 
@@ -49,15 +56,37 @@ export const getMyRooms = async (req: AuthRequest, res: Response): Promise<void>
     const user = req.user;
     if (!user) { res.status(401).json({ message: 'Unauthorized' }); return; }
 
-    const myRoomCodes = mockDB.userRooms.get(user.id) || new Set();
-    const myRooms = Array.from(myRoomCodes)
-      .map(code => mockDB.rooms.get(code))
-      .filter(Boolean);
+    const relations = await docClient.send(new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: {
+        ':pk': `USER#${user.id}`,
+        ':sk': 'ROOM#'
+      }
+    }));
 
-    res.status(200).json({ rooms: myRooms });
+    if (!relations.Items || relations.Items.length === 0) {
+      res.status(200).json({ rooms: [] });
+      return;
+    }
+
+    const roomCodes = relations.Items.map(item => item.SK.split('#')[1]);
+    
+    // Fetch all room metadata
+    const roomPromises = roomCodes.map(code => 
+      docClient.send(new GetCommand({
+        TableName: TABLE_NAME,
+        Key: { PK: `ROOM#${code}`, SK: 'METADATA' }
+      }))
+    );
+    
+    const roomsData = await Promise.all(roomPromises);
+    const validRooms = roomsData.map(r => r.Item).filter(Boolean);
+
+    res.status(200).json({ rooms: validRooms });
   } catch (error: any) {
     console.error('Get rooms error:', error);
-    res.status(500).json({ message: 'Cloud DB Error: ' + error.message });
+    res.status(500).json({ message: 'DynamoDB Error: ' + error.message });
   }
 };
 
@@ -67,7 +96,12 @@ export const joinRoom = async (req: AuthRequest, res: Response): Promise<void> =
     const user = req.user;
     if (!user) { res.status(401).json({ message: 'Unauthorized' }); return; }
 
-    const roomMeta = mockDB.rooms.get(roomCode);
+    const roomRes = await docClient.send(new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: `ROOM#${roomCode}`, SK: 'METADATA' }
+    }));
+
+    const roomMeta = roomRes.Item;
 
     if (!roomMeta) {
       res.status(404).json({ message: 'Room not found' });
@@ -80,17 +114,29 @@ export const joinRoom = async (req: AuthRequest, res: Response): Promise<void> =
     }
 
     // Add to user's joined rooms
-    if (!mockDB.userRooms.has(user.id)) {
-      mockDB.userRooms.set(user.id, new Set());
-    }
-    mockDB.userRooms.get(user.id)!.add(roomCode);
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        PK: `USER#${user.id}`,
+        SK: `ROOM#${roomCode}`,
+        joinedAt: new Date().toISOString()
+      }
+    }));
     
     // Increment student count
-    roomMeta.studentsCount = (roomMeta.studentsCount || 0) + 1;
+    await docClient.send(new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: `ROOM#${roomCode}`, SK: 'METADATA' },
+      UpdateExpression: 'SET studentsCount = if_not_exists(studentsCount, :start) + :inc',
+      ExpressionAttributeValues: {
+        ':start': 0,
+        ':inc': 1
+      }
+    }));
 
     res.status(200).json({ message: 'Joined successfully', room: roomMeta });
   } catch (error: any) {
     console.error('Join room error:', error);
-    res.status(500).json({ message: 'Cloud DB Error: ' + error.message });
+    res.status(500).json({ message: 'DynamoDB Error: ' + error.message });
   }
 };

@@ -1,9 +1,14 @@
-// We use an in-memory database to bypass AWS 500 errors completely.
-// This acts exactly like a production database for testing.
-export const mockDB = {
-  rooms: new Map<string, any>(),
-  users: new Map<string, any>(),
-  userRooms: new Map<string, Set<string>>()
-};
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
-export const TABLE_NAME = "CompanionAi";
+const client = new DynamoDBClient({
+  region: process.env.AWS_REGION || 'eu-north-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+  }
+});
+
+export const docClient = DynamoDBDocumentClient.from(client);
+export const TABLE_NAME = "eduScribe_Data";
+

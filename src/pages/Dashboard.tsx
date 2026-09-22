@@ -18,12 +18,21 @@ const Dashboard: React.FC = () => {
   const [classes, setClasses] = useState<any[]>([]);
 
   useEffect(() => {
-    // Load this specific user's joined/created classes on mount
-    const fetchRooms = () => {
+    // Load this specific user's joined/created classes from DynamoDB backend
+    const fetchRooms = async () => {
       if (!user) return;
-      const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
-      const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
-      setClasses(allSaved.filter((c: any) => myClassIds.includes(c.roomCode)));
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/rooms', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setClasses(data.rooms || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch rooms from cloud DB", err);
+      }
     };
     fetchRooms();
 
@@ -38,75 +47,69 @@ const Dashboard: React.FC = () => {
     }
   }, [user]);
 
-  const handleCreateClass = (data: any) => {
-    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const newClass = { 
-      id: Math.random().toString(),
-      roomCode,
-      instructorId: user?.id,
-      instructorName: user?.name,
-      studentsCount: 0, 
-      lecturesCount: 0, 
-      createdAt: new Date().toISOString(),
-      ...data 
-    };
-    
-    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
-    localStorage.setItem('eduscribe_all_classes', JSON.stringify([...allSaved, newClass]));
-    
-    if (user) {
-      const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
-      localStorage.setItem(`eduscribe_my_classes_${user.id}`, JSON.stringify([...myClassIds, roomCode]));
+  const handleCreateClass = async (data: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        const result = await res.json();
+        // Optimistically update UI
+        setClasses([...classes, { 
+          roomCode: result.roomCode, 
+          name: result.name, 
+          instructorName: user?.name,
+          instructorId: user?.id,
+          studentsCount: 0 
+        }]);
+      } else {
+        alert("Failed to create room in cloud DB");
+      }
+    } catch (err) {
+      console.error(err);
     }
-    
-    setClasses([...classes, newClass]);
   };
 
-  const handleJoinClass = (code: string, password?: string) => {
-    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
-    const foundClass = allSaved.find((c: any) => c.roomCode === code);
-    
-    if (!foundClass) {
-      alert(`Room code ${code} not found! Ask your teacher for the correct code.`);
-      return;
-    }
-
-    if (!foundClass.isPublic && foundClass.password !== password) {
-      alert('Incorrect password for this private room.');
-      return;
-    }
-
-    const alreadyJoined = classes.find((c) => c.roomCode === code);
-    if (!alreadyJoined && user) {
-      const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
-      localStorage.setItem(`eduscribe_my_classes_${user.id}`, JSON.stringify([...myClassIds, code]));
+  const handleJoinClass = async (code: string, password?: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/rooms/join', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ roomCode: code, password })
+      });
       
-      // Update student count
-      foundClass.studentsCount = (foundClass.studentsCount || 0) + 1;
-      localStorage.setItem('eduscribe_all_classes', JSON.stringify(allSaved));
+      const data = await res.json();
       
-      setClasses([...classes, foundClass]);
+      if (res.ok) {
+        const alreadyJoined = classes.find((c) => c.roomCode === code);
+        if (!alreadyJoined) {
+          setClasses([...classes, data.room]);
+        }
+        navigate(`/classroom/${code}`);
+      } else {
+        alert(data.message || 'Failed to join room');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error connecting to cloud DB');
     }
-    navigate(`/classroom/${code}`);
   };
 
-  const handleDeleteClass = (e: React.MouseEvent, classId: string, roomCode: string) => {
+  const handleDeleteClass = async (e: React.MouseEvent, classId: string, roomCode: string) => {
     e.stopPropagation();
     if (window.confirm('Are you sure you want to permanently delete this class? This cannot be undone.')) {
-      // Remove from all classes
-      const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
-      const filteredAll = allSaved.filter((c: any) => c.id !== classId);
-      localStorage.setItem('eduscribe_all_classes', JSON.stringify(filteredAll));
-
-      // Remove from my classes (for creator)
-      if (user) {
-        const myClassIds = JSON.parse(localStorage.getItem(`eduscribe_my_classes_${user.id}`) || '[]');
-        const filteredMy = myClassIds.filter((code: string) => code !== roomCode);
-        localStorage.setItem(`eduscribe_my_classes_${user.id}`, JSON.stringify(filteredMy));
-      }
-
-      // Update state
-      setClasses(classes.filter(c => c.id !== classId));
+      // API call to delete from DynamoDB would go here
+      setClasses(classes.filter(c => c.roomCode !== roomCode));
     }
   };
 

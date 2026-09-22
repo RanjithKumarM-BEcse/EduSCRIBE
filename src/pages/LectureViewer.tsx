@@ -290,12 +290,28 @@ const LectureViewer: React.FC = () => {
                <p className="text-xs mt-2 text-gray-500">If this takes too long, the video may be missing from local storage.</p>
             </div>
           ) : (
-            <video 
-              ref={videoRef}
-              src={videoObjectUrl}
-              controls
-              className="w-full h-full object-contain bg-black"
-            />
+            <div className="relative w-full h-full flex flex-col items-center justify-center bg-black overflow-hidden group">
+              <video 
+                ref={videoRef}
+                src={videoObjectUrl}
+                controls
+                className="w-full h-full object-contain"
+              />
+              {/* Dynamic Subtitle Overlay */}
+              {(() => {
+                const activeTranscript = transcriptList.find((t: any) => currentTime >= t.start && currentTime < t.end);
+                if (activeTranscript) {
+                  return (
+                    <div className="absolute bottom-20 left-0 right-0 flex justify-center pointer-events-none transition-opacity duration-200 px-4">
+                      <span className="bg-black/75 text-white px-4 py-2 rounded text-lg md:text-xl font-medium max-w-[90%] text-center shadow-lg backdrop-blur-sm drop-shadow-md">
+                        {activeTranscript.text}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            </div>
           )}
         </div>
 

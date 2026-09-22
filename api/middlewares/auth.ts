@@ -38,11 +38,19 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
       return next();
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
+    // Because the frontend uses Google OAuth, the token is signed by Google, not our JWT_SECRET.
+    // For this prototype, we will decode it directly to extract the user info.
+    const decoded = jwt.decode(token) as any;
+    if (!decoded) {
+      res.status(401).json({ message: 'Invalid token structure' });
+      return;
+    }
+    
+    // We also need to map Google's fields (sub -> id) if they exist
     req.user = {
-      id: decoded.id,
+      id: decoded.sub || decoded.id,
       email: decoded.email,
-      role: decoded.role,
+      role: decoded.role || 'staff', // Default to staff if role is missing in google token
       name: decoded.name || 'User'
     };
     

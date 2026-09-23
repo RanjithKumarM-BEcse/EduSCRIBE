@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middlewares/auth.js';
-import { getDocClient, TABLE_NAME } from '../utils/db.js';
+import { AuthRequest } from '../middlewares/auth';
+import { getDocClient, TABLE_NAME } from '../utils/db';
 import { PutCommand, QueryCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 const generateRoomCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();

@@ -17,20 +17,25 @@ const LectureViewer: React.FC = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
 
-  const saveEdit = (originalIndex: number) => {
+  const saveEdit = async (originalIndex: number) => {
     if (!lecture) return;
     const newTranscript = [...lecture.transcript];
     newTranscript[originalIndex].text = editValue;
     const newLecture = { ...lecture, transcript: newTranscript };
     setLecture(newLecture);
 
-    const savedLectures = JSON.parse(localStorage.getItem(`eduscribe_lectures_${roomCode}`) || '[]');
-    const index = savedLectures.findIndex((l: any) => l.id === lectureId);
-    if (index >= 0) {
-      savedLectures[index] = newLecture;
-      localStorage.setItem(`eduscribe_lectures_${roomCode}`, JSON.stringify(savedLectures));
-      // Dispatch custom event for cross-tab syncing in the same app if we wanted, 
-      // but standard 'storage' event fires across tabs naturally!
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/rooms/${roomCode}/lectures`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newLecture)
+      });
+    } catch (err) {
+      console.error("Failed to update transcript in AWS", err);
     }
     setEditingIndex(null);
   };
@@ -38,31 +43,42 @@ const LectureViewer: React.FC = () => {
   useEffect(() => {
     let activeUrl: string | null = null;
     
-    const loadLecture = () => {
+    const loadLecture = async () => {
       if (!roomCode || !lectureId) return;
-      const savedLectures = JSON.parse(localStorage.getItem(`eduscribe_lectures_${roomCode}`) || '[]');
-      const found = savedLectures.find((l: any) => l.id === lectureId);
       
-      if (found) {
-        setLecture(found);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/rooms/${roomCode}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         
-        if (found.videoUrl && !videoObjectUrl) {
-          // Prioritize S3 public URL if available
-          setVideoObjectUrl(found.videoUrl);
-        } else if (found.videoId && !videoObjectUrl) {
-          // Fallback to local IndexedDB
-          import('../utils/indexedDB').then(({ getVideo }) => {
-            getVideo(found.videoId).then((file) => {
-              if (file) {
-                activeUrl = URL.createObjectURL(file);
-                setVideoObjectUrl(activeUrl);
-              }
-            }).catch(console.error);
-          });
+        if (res.ok) {
+          const data = await res.json();
+          // Find either by id (old local format) or parse SK
+          const found = data.lectures?.find((l: any) => l.id === lectureId || l.SK === `LECTURE#${lectureId}`);
+          
+          if (found) {
+            setLecture(found);
+            
+            if (found.videoUrl && !videoObjectUrl) {
+              setVideoObjectUrl(found.videoUrl);
+            } else if (found.videoId && !videoObjectUrl) {
+              import('../utils/indexedDB').then(({ getVideo }) => {
+                getVideo(found.videoId).then((file) => {
+                  if (file) {
+                    activeUrl = URL.createObjectURL(file);
+                    setVideoObjectUrl(activeUrl);
+                  }
+                }).catch(console.error);
+              });
+            }
+          }
         }
+      } catch (err) {
+        console.error("Failed to fetch lecture from AWS", err);
       }
     };
-
+    
     loadLecture();
 
     // Cross-tab synchronization! (The "instantly on everyone else's screen" feature)

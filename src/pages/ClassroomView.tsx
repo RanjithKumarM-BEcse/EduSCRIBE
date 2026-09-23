@@ -18,13 +18,20 @@ const ClassroomView: React.FC = () => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   useEffect(() => {
-    const fetchRoom = () => {
-      const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
-      const room = allSaved.find((r: any) => r.roomCode === roomCode);
-      if (room) setRoomData(room);
-
-      const savedLectures = JSON.parse(localStorage.getItem(`eduscribe_lectures_${roomCode}`) || '[]');
-      setLectures(savedLectures);
+    const fetchRoom = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/rooms/${roomCode}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setRoomData(data.room);
+          setLectures(data.lectures || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch room data from AWS", err);
+      }
     };
     fetchRoom();
   }, [roomCode]);
@@ -76,19 +83,22 @@ const ClassroomView: React.FC = () => {
       transcript 
     };
 
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/rooms/${roomCode}/lectures`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newLecture)
+      });
+    } catch (err) {
+      console.error("Failed to save lecture to AWS", err);
+    }
+
     const updatedLectures = [...lectures, newLecture];
     setLectures(updatedLectures);
-    
-    // Save metadata to local storage
-    localStorage.setItem(`eduscribe_lectures_${roomCode}`, JSON.stringify(updatedLectures));
-
-    // Update room lecture count
-    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
-    const roomIndex = allSaved.findIndex((r: any) => r.roomCode === roomCode);
-    if (roomIndex >= 0) {
-      allSaved[roomIndex].lecturesCount = (allSaved[roomIndex].lecturesCount || 0) + 1;
-      localStorage.setItem('eduscribe_all_classes', JSON.stringify(allSaved));
-    }
 
     setIsUploadOpen(false);
   };
@@ -96,17 +106,18 @@ const ClassroomView: React.FC = () => {
   const handleDeleteLecture = async (lectureId: string, videoUrl?: string) => {
     if (!window.confirm("Are you sure you want to permanently delete this lecture?")) return;
 
-    // Remove from UI state and local storage immediately
+    // Remove from UI state
     const updatedLectures = lectures.filter(l => l.id !== lectureId);
     setLectures(updatedLectures);
-    localStorage.setItem(`eduscribe_lectures_${roomCode}`, JSON.stringify(updatedLectures));
 
-    // Update lectures count
-    const allSaved = JSON.parse(localStorage.getItem('eduscribe_all_classes') || '[]');
-    const roomIndex = allSaved.findIndex((r: any) => r.roomCode === roomCode);
-    if (roomIndex >= 0) {
-      allSaved[roomIndex].lecturesCount = Math.max(0, (allSaved[roomIndex].lecturesCount || 0) - 1);
-      localStorage.setItem('eduscribe_all_classes', JSON.stringify(allSaved));
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/rooms/${roomCode}/lectures/${lectureId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (err) {
+      console.error("Failed to delete lecture from AWS", err);
     }
 
     // Try to delete from S3

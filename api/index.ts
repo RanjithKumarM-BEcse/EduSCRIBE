@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import roomsRoutes from './routes/rooms.routes';
+import s3Routes from './routes/s3.routes';
 
 dotenv.config();
 
@@ -17,6 +18,9 @@ app.use('/auth', authRoutes);
 
 app.use('/api/rooms', roomsRoutes);
 app.use('/rooms', roomsRoutes);
+
+app.use('/api/s3', s3Routes);
+app.use('/s3', s3Routes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend is running!' });

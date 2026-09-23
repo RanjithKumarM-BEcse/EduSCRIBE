@@ -43,9 +43,13 @@ const ClassroomView: React.FC = () => {
 
     // Try to upload to S3 first if configured
     try {
-      const res = await fetch('/api/s3-upload', {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/s3/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ filename: file.name, contentType: file.type })
       });
 
@@ -125,9 +129,13 @@ const ClassroomView: React.FC = () => {
       try {
         const urlObj = new URL(videoUrl);
         const key = urlObj.pathname.substring(1); // removes leading '/'
-        await fetch('/api/s3-delete', {
+        const token = localStorage.getItem('token');
+        await fetch('/api/s3/delete', {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({ key })
         });
       } catch (err) {

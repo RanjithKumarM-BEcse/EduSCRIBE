@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
-import { mockDB } from '../utils/db.js';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -21,7 +20,7 @@ export const testLogin = async (req: Request, res: Response): Promise<void> => {
     // Randomly assign role if it doesn't exist, but we prompt them in UI anyway
     const userRole = null; 
     
-    mockDB.users.set(userId, { id: userId, email, name, avatar, role: userRole });
+    // User storage in DynamoDB would go here (omitted for test login)
 
     const jwtToken = jwt.sign(
       { id: userId, email, role: userRole, name },

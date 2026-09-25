@@ -371,16 +371,27 @@ Answer the student's question based strictly on the transcript. If the answer is
             </div>
           ) : (
             <div className="relative w-full h-full flex flex-col items-center justify-center bg-black overflow-hidden group">
-              <video 
-                ref={videoRef}
-                src={videoObjectUrl}
-                controls
-                className="w-full h-full object-contain"
-              />
+              {videoObjectUrl.includes('youtube.com') || videoObjectUrl.includes('youtu.be') ? (
+                <iframe
+                  key={currentTime} // Forces reload to the exact timestamp when clicked
+                  src={`https://www.youtube.com/embed/${videoObjectUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=))([^"&?\/\s]{11})/)?.[1]}?start=${Math.floor(currentTime)}&autoplay=1`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full border-0"
+                />
+              ) : (
+                <video 
+                  ref={videoRef}
+                  src={videoObjectUrl}
+                  controls
+                  className="w-full h-full object-contain"
+                />
+              )}
               {/* Dynamic Subtitle Overlay */}
               {(() => {
                 const activeTranscript = transcriptList.find((t: any) => currentTime >= t.start && currentTime < t.end);
-                if (activeTranscript) {
+                // Only show overlay if it's not YouTube (since YouTube has its own CC) or if we really want to
+                if (activeTranscript && (!videoObjectUrl.includes('youtube.com') && !videoObjectUrl.includes('youtu.be'))) {
                   return (
                     <div className="absolute bottom-20 left-0 right-0 flex justify-center pointer-events-none transition-opacity duration-200 px-4">
                       <span className="bg-black/75 text-white px-4 py-2 rounded text-lg md:text-xl font-medium max-w-[90%] text-center shadow-lg backdrop-blur-sm drop-shadow-md">

@@ -15,6 +15,8 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
   const [statusText, setStatusText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [apiKey, setApiKey] = useState(localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY || '');
+  const [uploadMode, setUploadMode] = useState<'file' | 'youtube'>('file');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
 
   if (!isOpen) return null;
 
@@ -45,6 +47,31 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (uploadMode === 'youtube') {
+      if (!title.trim() || !youtubeUrl.trim()) return;
+      setIsUploading(true);
+      setProgress(50);
+      setStatusText('Processing YouTube link...');
+      
+      try {
+        const dummyFile = new File(['youtube_link'], youtubeUrl, { type: 'text/plain' });
+        const fallbackTranscript = generateMockTranscript(title, 600); // assume 10 mins for mock
+        setProgress(100);
+        setStatusText('Done!');
+        
+        await onUpload(title, dummyFile, 600, fallbackTranscript);
+        
+        setTitle('');
+        setYoutubeUrl('');
+        setIsUploading(false);
+        onClose();
+      } catch (error) {
+        setIsUploading(false);
+      }
+      return;
+    }
+
     if (!title.trim() || !file) return;
 
     if (apiKey) localStorage.setItem('groq_api_key', apiKey);
@@ -194,45 +221,79 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
               </div>
 
               <div className="mb-6">
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Video File</label>
-                
-                <input 
-                  type="file" 
-                  accept="video/*" 
-                  className="hidden" 
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                />
-                
-                {!file ? (
-                  <div 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-purple-50 transition-all group"
+                <div className="flex space-x-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('file')}
+                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors ${uploadMode === 'file' ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                   >
-                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-white group-hover:shadow-sm transition-all text-primary">
-                      <UploadCloud className="w-6 h-6" />
-                    </div>
-                    <span className="text-sm font-bold text-gray-700 mb-1">Click to select video</span>
-                    <span className="text-xs text-gray-500">MP4, WebM, or OGG (Max 2GB)</span>
-                  </div>
+                    MP4 File
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('youtube')}
+                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors ${uploadMode === 'youtube' ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                  >
+                    YouTube Link
+                  </button>
+                </div>
+                
+                {uploadMode === 'file' ? (
+                  <>
+                    <input 
+                      type="file" 
+                      accept="video/*" 
+                      className="hidden" 
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                    />
+                    
+                    {!file ? (
+                      <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-purple-50 transition-all group"
+                      >
+                        <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-white group-hover:shadow-sm transition-all text-primary">
+                          <UploadCloud className="w-6 h-6" />
+                        </div>
+                        <span className="text-sm font-bold text-gray-700 mb-1">Click to select video</span>
+                        <span className="text-xs text-gray-500">MP4, WebM, or OGG (Max 25MB for Demo)</span>
+                      </div>
+                    ) : (
+                      <div className="border border-primary/30 bg-purple-50 rounded-xl p-4 flex items-center justify-between">
+                        <div className="flex items-center space-x-3 overflow-hidden">
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                            <Video className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="truncate">
+                            <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
+                            <p className="text-xs text-gray-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                          </div>
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => setFile(null)}
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <div className="border border-primary/30 bg-purple-50 rounded-xl p-4 flex items-center justify-between">
-                    <div className="flex items-center space-x-3 overflow-hidden">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
-                        <Video className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="truncate">
-                        <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
-                        <p className="text-xs text-gray-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
-                      </div>
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={() => setFile(null)}
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">YouTube URL</label>
+                    <input 
+                      type="url" 
+                      value={youtubeUrl}
+                      onChange={(e) => setYoutubeUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=..." 
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium"
+                      required={uploadMode === 'youtube'}
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      A smart mock AI transcript will be generated for YouTube videos to demonstrate semantic search.
+                    </p>
                   </div>
                 )}
               </div>

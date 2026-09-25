@@ -40,41 +40,46 @@ const ClassroomView: React.FC = () => {
     
     const lectureId = Math.random().toString(36).substring(2, 9);
     let s3Url = null;
+    let isYouTube = file.type === 'text/plain' && (file.name.includes('youtube.com') || file.name.includes('youtu.be'));
 
-    // Try to upload to S3 first if configured
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/s3/upload', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ filename: file.name, contentType: file.type })
-      });
-
-      if (res.ok) {
-        const { url, publicUrl } = await res.json();
-        const uploadRes = await fetch(url, {
-          method: 'PUT',
-          headers: { 'Content-Type': file.type },
-          body: file
-        });
-        
-        if (uploadRes.ok) {
-          s3Url = publicUrl;
-        }
-      }
-    } catch (err) {
-      console.log("S3 upload not configured or failed, falling back to local DB");
-    }
-    
-    if (!s3Url) {
-      // Save the actual video file to IndexedDB so it survives page refreshes!
+    if (isYouTube) {
+      s3Url = file.name;
+    } else {
+      // Try to upload to S3 first if configured
       try {
-        await saveVideo(lectureId, file);
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/s3/upload', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ filename: file.name, contentType: file.type })
+        });
+
+        if (res.ok) {
+          const { url, publicUrl } = await res.json();
+          const uploadRes = await fetch(url, {
+            method: 'PUT',
+            headers: { 'Content-Type': file.type },
+            body: file
+          });
+          
+          if (uploadRes.ok) {
+            s3Url = publicUrl;
+          }
+        }
       } catch (err) {
-        console.error("Failed to save video to DB", err);
+        console.log("S3 upload not configured or failed, falling back to local DB");
+      }
+      
+      if (!s3Url) {
+        // Save the actual video file to IndexedDB so it survives page refreshes!
+        try {
+          await saveVideo(lectureId, file);
+        } catch (err) {
+          console.error("Failed to save video to DB", err);
+        }
       }
     }
 

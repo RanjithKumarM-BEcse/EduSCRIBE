@@ -614,13 +614,18 @@ Answer the student's question based strictly on the transcript. If the answer is
 
       {/* Floating Action Button (FAB) */}
       {!isChatOpen && (
-        <button
-          onClick={() => setIsChatOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 transition-transform hover:shadow-2xl z-50 focus:outline-none focus:ring-4 focus:ring-primary/30"
-          aria-label="Open AI Tutor"
-        >
-          <MessageSquare className="w-6 h-6" />
-        </button>
+        <div className="fixed bottom-6 right-6 flex flex-col items-center space-y-2 z-50">
+          <span className="bg-white px-3 py-1 rounded-full shadow-md text-xs font-bold text-gray-700 animate-pulse border border-gray-100">
+            Chat Bot
+          </span>
+          <button
+            onClick={() => setIsChatOpen(true)}
+            className="w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 transition-transform hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-primary/30"
+            aria-label="Open AI Tutor"
+          >
+            <MessageSquare className="w-6 h-6" />
+          </button>
+        </div>
       )}
     </div>
   );

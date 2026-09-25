@@ -35,7 +35,29 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
   };
 
   const generateMockTranscript = (title: string, duration: number) => {
-    const safeDuration = (duration && !isNaN(duration) && duration > 0) ? duration : 45;
+    const safeDuration = (duration && !isNaN(duration) && duration > 0) ? duration : 600;
+    const lowerTitle = title.toLowerCase();
+    
+    if (lowerTitle.includes('python')) {
+      return [
+        { start: 0, end: 15, text: `Welcome to this Python tutorial.` },
+        { start: 15, end: 45, text: `In Python, variables are dynamically typed, which means you don't need to declare their type.` },
+        { start: 45, end: 90, text: `If you want to print text on multiple lines, you can do this in a few ways. You can use multiple print() function calls.` },
+        { start: 90, end: 150, text: `Alternatively, you can use triple quotes (''' or """) to span a string across multiple lines in a single print statement.` },
+        { start: 150, end: 200, text: `This is incredibly useful for formatting output or writing multiline comments.` },
+        { start: 200, end: safeDuration, text: `Next, let's talk about loops and functions...` }
+      ];
+    } else if (lowerTitle.includes('java')) {
+      return [
+        { start: 0, end: 15, text: `Welcome to this Java tutorial.` },
+        { start: 15, end: 45, text: `Java is an object-oriented programming language. Everything in Java must be inside a class.` },
+        { start: 45, end: 90, text: `To print output, we use System.out.println(). The 'ln' stands for line, which automatically moves the cursor to the next line.` },
+        { start: 90, end: 150, text: `If you just use System.out.print() without the 'ln', it will print on the same line.` },
+        { start: 150, end: 200, text: `Remember that Java is strongly typed, meaning you must declare the variable type like int, String, or boolean.` },
+        { start: 200, end: safeDuration, text: `Next, let's explore classes and objects...` }
+      ];
+    }
+
     const step = Math.max(1, safeDuration / 4);
     return [
       { start: 0, end: step, text: `Welcome to ${title}. Let's get started with today's topic.` },

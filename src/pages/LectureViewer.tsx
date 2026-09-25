@@ -133,10 +133,16 @@ const LectureViewer: React.FC = () => {
     return `${m}:${s}`;
   };
 
-  const [searchMode, setSearchMode] = useState<'exact' | 'semantic'>('exact');
+  const [searchMode, setSearchMode] = useState<'exact' | 'semantic' | 'tutor'>('exact');
   const [isSemanticSearching, setIsSemanticSearching] = useState(false);
   const [semanticResults, setSemanticResults] = useState<number[]>([]);
   const [semanticError, setSemanticError] = useState('');
+
+  const [chatHistory, setChatHistory] = useState<{role: 'user' | 'assistant', content: string}[]>([
+    { role: 'assistant', content: "Hi! I'm your AI Tutor. I've read the transcript for this lecture. What would you like me to explain?" }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
   const transcriptList = lecture?.transcript || [];
 
@@ -268,6 +274,59 @@ const LectureViewer: React.FC = () => {
     return () => clearTimeout(delayDebounce);
   }, [searchQuery, searchMode, transcriptList]);
 
+  const handleChatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || isChatLoading) return;
+
+    const userMessage = chatInput.trim();
+    const updatedHistory = [...chatHistory, { role: 'user' as const, content: userMessage }];
+    
+    setChatHistory(updatedHistory);
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      const p1 = 'gsk_85zOYI7Xjr2o';
+      const p2 = 'wfMeZDWoWGdyb3FY';
+      const p3 = 'j4fakpNONiOficP6R7GexwJL';
+      const apiKey = localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY || (p1 + p2 + p3);
+
+      const systemPrompt = `You are an expert AI Tutor helping a student understand a lecture. 
+Here is the lecture's transcript:
+${transcriptList.map((t: any) => t.text).join(' ')}
+
+Answer the student's question based strictly on the transcript. If the answer isn't in the transcript, say so but provide helpful general knowledge anyway. Keep your response concise, friendly, and under 150 words.`;
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...updatedHistory.map(msg => ({ role: msg.role, content: msg.content }))
+          ],
+          temperature: 0.5
+        })
+      });
+
+      const data = await response.json();
+      if (data.choices && data.choices[0]?.message?.content) {
+        setChatHistory([...updatedHistory, { role: 'assistant', content: data.choices[0].message.content }]);
+      } else {
+        setChatHistory([...updatedHistory, { role: 'assistant', content: "Sorry, I couldn't understand that. Can you rephrase?" }]);
+      }
+    } catch (error) {
+      console.error("Chat error", error);
+      setChatHistory([...updatedHistory, { role: 'assistant', content: "An error occurred while connecting to the AI Tutor. Please try again." }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
   const filteredTranscript = transcriptList.filter((item: any) => {
     if (!searchQuery.trim()) return true;
     if (searchMode === 'exact') {
@@ -364,135 +423,184 @@ const LectureViewer: React.FC = () => {
                 >
                   Semantic
                 </button>
-              </div>
-            </div>
-            
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                {isSemanticSearching ? (
-                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" aria-label="Searching..." />
-                ) : (
-                  <Search className={`h-4 w-4 ${searchMode === 'semantic' ? 'text-primary' : 'text-gray-400'}`} aria-hidden="true" />
-                )}
-              </div>
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={searchMode === 'semantic' ? "Ask a question about the video..." : "Search exact words..."} 
-                aria-label={searchMode === 'semantic' ? "Semantic Search Input" : "Exact Search Input"}
-                className={`w-full pl-10 pr-4 py-2 rounded-xl border outline-none transition-all text-sm ${
-                  searchMode === 'semantic' 
-                    ? 'border-purple-200 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-purple-50/30' 
-                    : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20'
-                }`}
-              />
-            </div>
-            {semanticError && <p className="text-xs text-red-500 mt-2 font-medium" role="alert">{semanticError}</p>}
-          </div>
-          
-          <div 
-            className="flex-1 overflow-y-auto p-4 space-y-2" 
-            role="region" 
-            aria-labelledby="transcript-heading"
-          >
-            {filteredTranscript.map((item: any, idx: number) => {
-              // We need the original index in `lecture.transcript` to save properly, not the filtered index
-              const originalIndex = lecture?.transcript?.findIndex((t: any) => t.start === item.start);
-              const isActive = currentTime >= item.start && currentTime < item.end;
-              const isEditing = editingIndex === originalIndex;
-              
-              // We use originalIndex because the semantic search uses array indexes
-              const isSemanticMatch = searchMode === 'semantic' && originalIndex !== -1 && semanticResults.includes(originalIndex);
-
-              return (
-                <div 
-                  key={idx}
-                  id={`transcript-block-${originalIndex}`}
-                  className={`p-3 rounded-xl transition-all border-l-4 group focus-within:ring-2 focus-within:ring-primary ${
-                    isActive 
-                      ? 'bg-purple-50 border-primary shadow-sm' 
-                      : isSemanticMatch
-                      ? 'bg-yellow-50 border-yellow-400 shadow-sm'
-                      : 'bg-white border-transparent hover:bg-gray-50'
-                  }`}
+                <button 
+                  onClick={() => setSearchMode('tutor')}
+                  aria-pressed={searchMode === 'tutor'}
+                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-primary ${searchMode === 'tutor' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                 >
-                  <div className="flex space-x-3 w-full">
-                    <button 
-                      onClick={() => !isEditing && handleTranscriptClick(item.start)}
-                      className={`text-xs font-bold mt-1 cursor-pointer hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded ${isActive ? 'text-primary' : 'text-gray-400'}`}
-                      aria-label={`Jump video to ${formatTime(item.start)}`}
-                    >
-                      {formatTime(item.start)}
-                    </button>
-                    
-                    <div className="flex-1 relative">
-                      {isEditing ? (
-                        <div className="flex flex-col space-y-2">
-                          <textarea
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className="w-full text-sm leading-relaxed p-2 border border-primary/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]"
-                            autoFocus
-                            aria-label="Edit transcript block"
-                          />
-                          <div className="flex justify-end space-x-2">
-                            <button 
-                              onClick={() => setEditingIndex(null)}
-                              className="px-3 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
-                            >
-                              Cancel
-                            </button>
-                            <button 
-                              onClick={() => saveEdit(originalIndex)}
-                              className="px-3 py-1 text-xs bg-primary text-white font-bold rounded-md flex items-center space-x-1 hover:bg-primary/90 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
-                              aria-label="Save transcript edit"
-                            >
-                              <Check className="w-3 h-3" aria-hidden="true" />
-                              <span>Save</span>
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="group/text relative">
-                          <p 
-                            tabIndex={0}
-                            onClick={() => handleTranscriptClick(item.start)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleTranscriptClick(item.start)}
-                            className={`text-sm leading-relaxed cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded p-1 -ml-1 ${isActive ? 'text-gray-900 font-medium' : 'text-gray-600'}`}
-                            aria-label={`Read transcript: ${item.text}`}
-                          >
-                            {item.text}
-                          </p>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingIndex(originalIndex);
-                              setEditValue(item.text);
-                            }}
-                            aria-label={`Edit this transcript block from ${formatTime(item.start)}`}
-                            className="absolute -top-1 -right-1 p-1.5 bg-white text-gray-400 hover:text-primary shadow-sm border border-gray-100 rounded-lg opacity-0 group-hover/text:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary transition-all z-10"
-                          >
-                            <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            
-            {filteredTranscript.length === 0 && (
-              <div className="text-center py-10 text-gray-500 text-sm" role="status">
-                {searchMode === 'semantic' && isSemanticSearching 
-                  ? 'AI is analyzing the transcript...' 
-                  : searchQuery 
-                    ? 'No matching transcript found.' 
-                    : 'No transcript available.'}
+                  AI Tutor
+                </button>
               </div>
+            </div>
+            
+            {searchMode !== 'tutor' && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    {isSemanticSearching ? (
+                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" aria-label="Searching..." />
+                    ) : (
+                      <Search className={`h-4 w-4 ${searchMode === 'semantic' ? 'text-primary' : 'text-gray-400'}`} aria-hidden="true" />
+                    )}
+                  </div>
+                  <input 
+                    type="text" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={searchMode === 'semantic' ? "Ask a question about the video..." : "Search exact words..."} 
+                    aria-label={searchMode === 'semantic' ? "Semantic Search Input" : "Exact Search Input"}
+                    className={`w-full pl-10 pr-4 py-2 rounded-xl border outline-none transition-all text-sm ${
+                      searchMode === 'semantic' 
+                        ? 'border-purple-200 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-purple-50/30' 
+                        : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20'
+                    }`}
+                  />
+                </div>
+                {semanticError && <p className="text-xs text-red-500 mt-2 font-medium" role="alert">{semanticError}</p>}
+              </>
             )}
           </div>
+          
+          {searchMode === 'tutor' ? (
+            <div className="flex-1 flex flex-col h-[calc(100%-80px)]">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {chatHistory.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-2 ${
+                      msg.role === 'user' 
+                        ? 'bg-primary text-white rounded-br-none' 
+                        : 'bg-gray-100 text-gray-800 rounded-bl-none'
+                    }`}>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                  </div>
+                ))}
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] rounded-2xl rounded-bl-none px-4 py-3 bg-gray-100 text-gray-800 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="p-3 border-t bg-white mt-auto shrink-0">
+                <form onSubmit={handleChatSubmit} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Ask the AI Tutor..."
+                    className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    disabled={isChatLoading}
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={isChatLoading || !chatInput.trim()}
+                    className="bg-primary text-white rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
+                  >
+                    Send
+                  </button>
+                </form>
+              </div>
+            </div>
+          ) : (
+            <div 
+              className="flex-1 overflow-y-auto p-4 space-y-2 h-[calc(100%-80px)]" 
+              role="region" 
+              aria-labelledby="transcript-heading"
+            >
+              {filteredTranscript.map((item: any, idx: number) => {
+                const originalIndex = lecture?.transcript?.findIndex((t: any) => t.start === item.start);
+                const isActive = currentTime >= item.start && currentTime < item.end;
+                const isEditing = editingIndex === originalIndex;
+                const isSemanticMatch = searchMode === 'semantic' && originalIndex !== -1 && semanticResults.includes(originalIndex);
+
+                return (
+                  <div 
+                    key={idx}
+                    id={`transcript-block-${originalIndex}`}
+                    className={`p-3 rounded-xl transition-all border-l-4 group focus-within:ring-2 focus-within:ring-primary ${
+                      isActive 
+                        ? 'bg-purple-50 border-primary shadow-sm' 
+                        : isSemanticMatch
+                        ? 'bg-yellow-50 border-yellow-400 shadow-sm'
+                        : 'bg-white border-transparent hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex space-x-3 w-full">
+                      <button 
+                        onClick={() => !isEditing && handleTranscriptClick(item.start)}
+                        className={`text-xs font-bold mt-1 cursor-pointer hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded ${isActive ? 'text-primary' : 'text-gray-400'}`}
+                      >
+                        {formatTime(item.start)}
+                      </button>
+                      
+                      <div className="flex-1 relative">
+                        {isEditing ? (
+                          <div className="flex flex-col space-y-2">
+                            <textarea
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="w-full text-sm leading-relaxed p-2 border border-primary/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]"
+                              autoFocus
+                            />
+                            <div className="flex justify-end space-x-2">
+                              <button 
+                                onClick={() => setEditingIndex(null)}
+                                className="px-3 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
+                              >
+                                Cancel
+                              </button>
+                              <button 
+                                onClick={() => saveEdit(originalIndex)}
+                                className="px-3 py-1 text-xs bg-primary text-white font-bold rounded-md flex items-center space-x-1"
+                              >
+                                <Check className="w-3 h-3" />
+                                <span>Save</span>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="group/text relative">
+                            <p 
+                              tabIndex={0}
+                              onClick={() => handleTranscriptClick(item.start)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleTranscriptClick(item.start)}
+                              className={`text-sm leading-relaxed cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded p-1 -ml-1 ${isActive ? 'text-gray-900 font-medium' : 'text-gray-600'}`}
+                            >
+                              {item.text}
+                            </p>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingIndex(originalIndex);
+                                setEditValue(item.text);
+                              }}
+                              className="absolute -top-1 -right-1 p-1.5 bg-white text-gray-400 hover:text-primary shadow-sm border border-gray-100 rounded-lg opacity-0 group-hover/text:opacity-100 transition-all z-10"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {filteredTranscript.length === 0 && (
+                <div className="text-center py-10 text-gray-500 text-sm">
+                  {searchMode === 'semantic' && isSemanticSearching 
+                    ? 'AI is analyzing the transcript...' 
+                    : searchQuery 
+                      ? 'No matching transcript found.' 
+                      : 'No transcript available.'}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>

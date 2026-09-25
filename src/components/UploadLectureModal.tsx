@@ -315,7 +315,7 @@ const UploadLectureModal: React.FC<UploadLectureModalProps> = ({ isOpen, onClose
 
               <button 
                 type="submit"
-                disabled={!file || !title}
+                disabled={!title || (uploadMode === 'file' && !file) || (uploadMode === 'youtube' && !youtubeUrl)}
                 className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 aria-label="Upload and Transcribe"
               >

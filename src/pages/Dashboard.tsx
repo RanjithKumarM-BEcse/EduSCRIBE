@@ -125,19 +125,19 @@ const Dashboard: React.FC = () => {
       <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
       
       {/* Navbar */}
-      <nav className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-40">
+      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-100 dark:border-gray-700 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center cursor-pointer" onClick={() => navigate('/dashboard')}>
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center mr-3 shadow-sm">
                 <PlayCircle className="text-white w-6 h-6" />
               </div>
-              <span className="font-extrabold text-2xl text-gray-900 tracking-tight">eduScribe</span>
+              <span className="font-extrabold text-2xl text-gray-900 dark:text-gray-100 tracking-tight">eduScribe</span>
             </div>
             <div className="flex items-center space-x-4">
               <div 
                 onClick={() => setIsProfileOpen(true)}
-                className="flex items-center space-x-3 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors"
+                className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-full border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
                 title="Edit Profile"
               >
                 <img src={user?.avatar} alt="avatar" className="w-8 h-8 rounded-full border-2 border-primary/20" />
@@ -160,7 +160,7 @@ const Dashboard: React.FC = () => {
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center space-x-4">
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Classes</h1>
+            <h1 className="text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tight">My Classes</h1>
           </div>
           {isStaff && (
             <button 
@@ -180,7 +180,7 @@ const Dashboard: React.FC = () => {
               <input 
                 type="text" 
                 placeholder="Enter 6-digit room code..." 
-                className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all uppercase tracking-wider"
+                className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all uppercase tracking-wider"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handleJoinClass(e.currentTarget.value.toUpperCase());
@@ -217,7 +217,7 @@ const Dashboard: React.FC = () => {
               }}
               role="button"
               aria-label={`Open class: ${cls.name}`}
-              className="bg-white rounded-2xl border border-gray-200 hover:border-primary shadow-sm overflow-hidden cursor-pointer group hover:-translate-y-1 transition-all focus:outline-none focus:ring-2 focus:ring-primary"
+              className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-primary shadow-sm overflow-hidden cursor-pointer group hover:-translate-y-1 transition-all focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <div className="h-32 bg-gray-100 relative w-full flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20"></div>
@@ -225,7 +225,7 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="p-5">
                 <div className="flex justify-between items-center mb-1">
-                  <h3 className="text-lg font-bold text-gray-900 truncate pr-2">{cls.name}</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate pr-2">{cls.name}</h3>
                   {user?.id === cls.instructorId && (
                     <button
                       onClick={(e) => handleDeleteClass(e, cls.id, cls.roomCode)}
@@ -237,9 +237,9 @@ const Dashboard: React.FC = () => {
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mb-4 truncate">{cls.instructorName}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 truncate">{cls.instructorName}</p>
                 
-                <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-3">
                   <div className="text-xs font-bold text-primary bg-purple-50 px-2 py-1 rounded">
                     {cls.roomCode}
                   </div>
@@ -254,9 +254,9 @@ const Dashboard: React.FC = () => {
           {isStaff && (
             <div 
               onClick={() => setIsCreateOpen(true)}
-              className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 hover:border-primary hover:bg-purple-50 flex flex-col items-center justify-center cursor-pointer transition-all min-h-[220px]"
+              className="bg-gray-50 dark:bg-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-primary hover:bg-purple-50 flex flex-col items-center justify-center cursor-pointer transition-all min-h-[220px]"
             >
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-gray-400">
+              <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-sm mb-3 text-gray-400">
                 <Plus className="w-6 h-6" />
               </div>
               <span className="font-bold text-gray-600">Create new class</span>

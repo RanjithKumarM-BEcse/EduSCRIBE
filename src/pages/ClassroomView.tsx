@@ -165,7 +165,7 @@ const ClassroomView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white px-4 py-2 rounded-lg z-50">
         Skip to main content
       </a>
@@ -176,7 +176,7 @@ const ClassroomView: React.FC = () => {
       />
 
       {/* Simple Header */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+      <nav className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
          <div className="flex items-center space-x-4">
             <button 
               onClick={() => navigate('/dashboard')}
@@ -189,12 +189,12 @@ const ClassroomView: React.FC = () => {
                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <PlayCircle className="text-white w-5 h-5" aria-hidden="true" />
                </div>
-               <span className="font-bold text-xl text-gray-900">eduScribe</span>
+               <span className="font-bold text-xl text-gray-900 dark:text-gray-100">eduScribe</span>
             </div>
             <span className="text-gray-300 font-light text-xl px-2">/</span>
             <span className="font-bold text-gray-700">{roomData?.name || 'Classroom'}</span>
          </div>
-         <div className="flex items-center space-x-3 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+         <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-full border border-gray-100 dark:border-gray-700">
             <img src={user?.avatar} alt="avatar" className="w-6 h-6 rounded-full" />
             <span className="text-sm font-bold text-gray-700">{user?.name}</span>
          </div>
@@ -206,7 +206,7 @@ const ClassroomView: React.FC = () => {
         {/* Left Column: Lectures */}
         <div className="flex-1">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Past Lectures</h2>
+            <h2 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight">Past Lectures</h2>
             {isStaff && (
               <button 
                 onClick={() => setIsUploadOpen(true)}
@@ -220,25 +220,25 @@ const ClassroomView: React.FC = () => {
 
           <div className="space-y-4">
             {lectures.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-400">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center mb-4 text-gray-400">
                   <Video className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-1">No lectures yet</h3>
-                <p className="text-gray-500 text-sm max-w-sm">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">No lectures yet</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm">
                   {isStaff ? "Upload a video lecture to automatically generate a transcript." : "Your instructor hasn't uploaded any lectures yet."}
                 </p>
               </div>
             ) : (
               lectures.map(lecture => (
-                <div key={lecture.id} className="bg-white border border-gray-200 hover:border-primary/30 rounded-2xl p-4 flex items-center justify-between transition-all group">
+                <div key={lecture.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-primary/30 rounded-2xl p-4 flex items-center justify-between transition-all group">
                    <div className="flex items-center space-x-4">
                       <div className="w-24 h-16 bg-gray-100 rounded-lg relative overflow-hidden flex items-center justify-center">
                          <Video className="w-6 h-6 text-gray-300" />
                       </div>
                       <div>
-                         <h4 className="font-bold text-gray-900">{lecture.title}</h4>
-                         <div className="flex items-center text-xs text-gray-500 mt-1">
+                         <h4 className="font-bold text-gray-900 dark:text-gray-100">{lecture.title}</h4>
+                         <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
                             <Clock className="w-3 h-3 mr-1" />
                             <span>{lecture.date}</span>
                          </div>
@@ -276,14 +276,14 @@ const ClassroomView: React.FC = () => {
 
         {/* Right Column: Room Details */}
         <div className="w-full lg:w-80 space-y-6">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
-            <h3 className="font-bold text-gray-900 mb-4">Room Details</h3>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4">Room Details</h3>
             
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Room Code</label>
-                <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-                  <span className="font-mono font-bold text-gray-900 tracking-wider">{roomCode}</span>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Room Code</label>
+                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
+                  <span className="font-mono font-bold text-gray-900 dark:text-gray-100 tracking-wider">{roomCode}</span>
                   <button 
                     onClick={() => copyToClipboard(roomCode || '', 'code')}
                     className="p-1.5 text-gray-400 hover:text-primary hover:bg-purple-50 rounded-lg transition-colors"
@@ -295,9 +295,9 @@ const ClassroomView: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Invite Link</label>
-                <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-                  <span className="font-mono text-xs text-gray-500 truncate mr-2">{window.location.origin}/join/{roomCode}</span>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Invite Link</label>
+                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
+                  <span className="font-mono text-xs text-gray-500 dark:text-gray-400 truncate mr-2">{window.location.origin}/join/{roomCode}</span>
                   <button 
                     onClick={() => copyToClipboard(`${window.location.origin}/join/${roomCode}`, 'link')}
                     className="p-1.5 text-gray-400 hover:text-primary hover:bg-purple-50 rounded-lg transition-colors flex-shrink-0"
@@ -309,9 +309,9 @@ const ClassroomView: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between text-sm">
-               <span className="text-gray-500 font-medium">Students Joined:</span>
-               <span className="font-bold text-gray-900 flex items-center">
+            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-sm">
+               <span className="text-gray-500 dark:text-gray-400 font-medium">Students Joined:</span>
+               <span className="font-bold text-gray-900 dark:text-gray-100 flex items-center">
                  <Users className="w-4 h-4 mr-1.5 text-gray-400" />
                  {roomData?.studentsCount || 0}
                </span>

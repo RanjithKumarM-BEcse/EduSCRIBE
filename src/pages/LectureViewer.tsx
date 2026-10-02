@@ -402,12 +402,12 @@ Answer the student's question based on the transcript. Since you know they are c
   });
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white px-4 py-2 rounded-lg z-50">
         Skip to main content
       </a>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 h-16 flex items-center px-4 shrink-0 z-10">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 flex items-center px-4 shrink-0 z-10">
         <button 
           onClick={() => navigate(`/classroom/${roomCode}`)} 
           className="p-2 hover:bg-gray-100 rounded-full mr-4 text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
@@ -419,21 +419,21 @@ Answer the student's question based on the transcript. Since you know they are c
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mr-3">
             <PlayCircle className="text-white w-5 h-5" aria-hidden="true" />
           </div>
-          <h1 className="font-bold text-gray-900 text-lg">{lecture?.title || 'Lecture Viewer'}</h1>
+          <h1 className="font-bold text-gray-900 dark:text-gray-100 text-lg">{lecture?.title || 'Lecture Viewer'}</h1>
         </div>
       </div>
 
       <main id="main-content" className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         {/* Left Side: Video Player & Notes (65%) */}
-        <div className="w-full lg:w-[65%] h-[40%] lg:h-full flex flex-col relative shrink-0 border-r border-gray-200 overflow-y-auto bg-gray-50">
+        <div className="w-full lg:w-[65%] h-[40%] lg:h-full flex flex-col relative shrink-0 border-r border-gray-200 dark:border-gray-700 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           
           {/* Video Section */}
           <div className="w-full aspect-video bg-black flex flex-col relative shrink-0">
             {!videoObjectUrl ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8 text-center bg-gray-900">
+              <div className="flex-1 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 p-8 text-center bg-gray-900">
                  <Video className="w-12 h-12 mb-4 text-gray-600" />
                  <p className="text-gray-400">Loading video...</p>
-                 <p className="text-xs mt-2 text-gray-500">If this takes too long, the video may be missing from local storage.</p>
+                 <p className="text-xs mt-2 text-gray-500 dark:text-gray-400">If this takes too long, the video may be missing from local storage.</p>
               </div>
             ) : (
               <div className="relative w-full h-full flex flex-col items-center justify-center bg-black overflow-hidden group">
@@ -472,21 +472,21 @@ Answer the student's question based on the transcript. Since you know they are c
           </div>
 
           {/* AI Notes & Cognitive Density Slider Section */}
-          <div className="p-6 md:p-8 bg-white flex-1">
+          <div className="p-6 md:p-8 bg-white dark:bg-gray-800 flex-1">
              <div className="max-w-4xl mx-auto">
-               <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 pb-4 border-b border-gray-100 gap-4">
+               <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-700 gap-4">
                  <div>
-                   <h2 className="text-2xl font-extrabold text-gray-900 flex items-center">
+                   <h2 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 flex items-center">
                      <span className="bg-primary/10 text-primary p-2 rounded-xl mr-3">
                        <FileText className="w-5 h-5" />
                      </span>
                      AI Generated Notes
                    </h2>
-                   <p className="text-gray-500 text-sm mt-1 ml-12">Dynamic summaries tailored to your learning pace.</p>
+                   <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 ml-12">Dynamic summaries tailored to your learning pace.</p>
                  </div>
                  
                  {/* Cognitive Density Slider */}
-                 <div className="bg-gray-50 border border-gray-200 p-3 rounded-xl flex items-center gap-4 min-w-[280px]">
+                 <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-3 rounded-xl flex items-center gap-4 min-w-[280px]">
                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider w-16 text-right">Simple</span>
                    <input 
                      type="range" 
@@ -522,12 +522,12 @@ Answer the student's question based on the transcript. Since you know they are c
 
         {/* Right Side: Transcript (35%) */}
         <div 
-          className="flex flex-col w-full lg:w-[35%] bg-white border-t lg:border-t-0 lg:border-l border-gray-200 h-[60%] lg:h-full shrink-0"
+          className="flex flex-col w-full lg:w-[35%] bg-white dark:bg-gray-800 border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-700 h-[60%] lg:h-full shrink-0"
           aria-label="Interactive Transcript"
         >
-          <div className="p-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+          <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 shrink-0">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="font-bold text-gray-900 flex items-center" id="transcript-heading">
+              <h2 className="font-bold text-gray-900 dark:text-gray-100 flex items-center" id="transcript-heading">
                 AI Transcript
               </h2>
               <div 
@@ -538,14 +538,14 @@ Answer the student's question based on the transcript. Since you know they are c
                 <button 
                   onClick={() => setSearchMode('exact')}
                   aria-pressed={searchMode === 'exact'}
-                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-primary ${searchMode === 'exact' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-primary ${searchMode === 'exact' ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
                 >
                   Exact
                 </button>
                 <button 
                   onClick={() => setSearchMode('semantic')}
                   aria-pressed={searchMode === 'semantic'}
-                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-primary ${searchMode === 'semantic' ? 'bg-primary text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-primary ${searchMode === 'semantic' ? 'bg-primary text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
                 >
                   Semantic
                 </button>
@@ -569,7 +569,7 @@ Answer the student's question based on the transcript. Since you know they are c
                 className={`w-full pl-10 pr-4 py-2 rounded-xl border outline-none transition-all text-sm ${
                   searchMode === 'semantic' 
                     ? 'border-purple-200 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-purple-50/30' 
-                    : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20'
+                    : 'border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20'
                 }`}
               />
             </div>
@@ -596,7 +596,7 @@ Answer the student's question based on the transcript. Since you know they are c
                       ? 'bg-purple-50 border-primary shadow-sm' 
                       : isSemanticMatch
                       ? 'bg-yellow-50 border-yellow-400 shadow-sm'
-                      : 'bg-white border-transparent hover:bg-gray-50'
+                      : 'bg-white dark:bg-gray-800 border-transparent hover:bg-gray-50 dark:bg-gray-900'
                   }`}
                 >
                   <div className="flex space-x-3 w-full">
@@ -619,7 +619,7 @@ Answer the student's question based on the transcript. Since you know they are c
                           <div className="flex justify-end space-x-2">
                             <button 
                               onClick={() => setEditingIndex(null)}
-                              className="px-3 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
+                              className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 rounded-md transition-colors"
                             >
                               Cancel
                             </button>
@@ -638,7 +638,7 @@ Answer the student's question based on the transcript. Since you know they are c
                             tabIndex={0}
                             onClick={() => handleTranscriptClick(item.start)}
                             onKeyDown={(e) => e.key === 'Enter' && handleTranscriptClick(item.start)}
-                            className={`text-sm leading-relaxed cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded p-1 -ml-1 ${isActive ? 'text-gray-900 font-medium' : 'text-gray-600'}`}
+                            className={`text-sm leading-relaxed cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded p-1 -ml-1 ${isActive ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-600'}`}
                           >
                             {item.text}
                           </p>
@@ -648,7 +648,7 @@ Answer the student's question based on the transcript. Since you know they are c
                               setEditingIndex(originalIndex);
                               setEditValue(item.text);
                             }}
-                            className="absolute -top-1 -right-1 p-1.5 bg-white text-gray-400 hover:text-primary shadow-sm border border-gray-100 rounded-lg opacity-0 group-hover/text:opacity-100 transition-all z-10"
+                            className="absolute -top-1 -right-1 p-1.5 bg-white dark:bg-gray-800 text-gray-400 hover:text-primary shadow-sm border border-gray-100 dark:border-gray-700 rounded-lg opacity-0 group-hover/text:opacity-100 transition-all z-10"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
@@ -661,7 +661,7 @@ Answer the student's question based on the transcript. Since you know they are c
             })}
             
             {filteredTranscript.length === 0 && (
-              <div className="text-center py-10 text-gray-500 text-sm">
+              <div className="text-center py-10 text-gray-500 dark:text-gray-400 text-sm">
                 {searchMode === 'semantic' && isSemanticSearching 
                   ? 'AI is analyzing the transcript...' 
                   : searchQuery 
@@ -674,7 +674,7 @@ Answer the student's question based on the transcript. Since you know they are c
       </main>
       {/* Floating AI Tutor Chat Window */}
       {isChatOpen && (
-        <div className="fixed bottom-20 right-6 w-[350px] h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50 overflow-hidden flex flex-col">
+        <div className="fixed bottom-20 right-6 w-[350px] h-[500px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col z-50 overflow-hidden flex flex-col">
           {/* Header */}
           <div className="bg-primary p-4 text-white flex justify-between items-center shadow-sm">
             <div className="flex items-center space-x-2">
@@ -683,7 +683,7 @@ Answer the student's question based on the transcript. Since you know they are c
             </div>
             <button 
               onClick={() => setIsChatOpen(false)}
-              className="text-white hover:bg-white/20 p-1 rounded-full transition-colors"
+              className="text-white hover:bg-white dark:bg-gray-800/20 p-1 rounded-full transition-colors"
               aria-label="Close chat"
             >
               <X className="w-5 h-5" />
@@ -691,13 +691,13 @@ Answer the student's question based on the transcript. Since you know they are c
           </div>
           
           {/* Chat History */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50">
             {chatHistory.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl px-4 py-2 shadow-sm ${
                   msg.role === 'user' 
                     ? 'bg-primary text-white rounded-br-none' 
-                    : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
+                    : 'bg-white dark:bg-gray-800 text-gray-800 border border-gray-100 dark:border-gray-700 rounded-bl-none'
                 }`}>
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 </div>
@@ -705,7 +705,7 @@ Answer the student's question based on the transcript. Since you know they are c
             ))}
             {isChatLoading && (
               <div className="flex justify-start">
-                <div className="max-w-[85%] rounded-2xl rounded-bl-none px-4 py-3 bg-white border border-gray-100 text-gray-800 flex items-center space-x-2 shadow-sm">
+                <div className="max-w-[85%] rounded-2xl rounded-bl-none px-4 py-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 flex items-center space-x-2 shadow-sm">
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
@@ -715,14 +715,14 @@ Answer the student's question based on the transcript. Since you know they are c
           </div>
           
           {/* Input Area */}
-          <div className="p-3 bg-white border-t border-gray-100">
+          <div className="p-3 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
             <form onSubmit={handleChatSubmit} className="flex gap-2 relative">
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Ask your AI Tutor..."
-                className="flex-1 border border-gray-200 bg-gray-50 rounded-full pl-4 pr-12 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+                className="flex-1 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-full pl-4 pr-12 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
                 disabled={isChatLoading}
               />
               <button 
@@ -740,7 +740,7 @@ Answer the student's question based on the transcript. Since you know they are c
       {/* Floating Action Button (FAB) */}
       {!isChatOpen && (
         <div className="fixed bottom-6 right-6 flex flex-col items-center space-y-2 z-50">
-          <span className="bg-white px-3 py-1 rounded-full shadow-md text-xs font-bold text-gray-700 animate-pulse border border-gray-100">
+          <span className="bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-md text-xs font-bold text-gray-700 animate-pulse border border-gray-100 dark:border-gray-700">
             Chat Bot
           </span>
           <button

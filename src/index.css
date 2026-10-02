@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-purple-600: #6C47FF;
   --color-coral-pink: #FF5B84;
@@ -17,5 +19,10 @@
     background-color: var(--color-background);
     color: #111827;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  }
+  
+  .dark body {
+    background-color: #111827;
+    color: #f9fafb;
   }
 }

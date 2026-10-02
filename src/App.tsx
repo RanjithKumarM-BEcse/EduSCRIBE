@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import ClassroomView from './pages/ClassroomView';
 import LectureViewer from './pages/LectureViewer';
 import JoinLinkRedirect from './pages/JoinLinkRedirect';
+import { ThemeToggle } from './components/ThemeToggle';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <ThemeToggle />
         <Routes>
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />

@@ -87,20 +87,20 @@ const Login: React.FC = () => {
         </div>
         
         {/* Background Decorations */}
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-white dark:bg-gray-800 opacity-5 rounded-full blur-3xl"></div>
         <div className="absolute top-32 -right-32 w-96 h-96 bg-coral-pink opacity-20 rounded-full blur-3xl"></div>
       </div>
 
       {/* Right Side - Login Form */}
-      <main id="main-content" className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 p-10 text-center relative overflow-hidden">
+      <main id="main-content" className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50 dark:bg-gray-900">
+        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 p-10 text-center relative overflow-hidden">
           
           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <PlayCircle className="text-primary w-8 h-8" />
           </div>
           
-          <h2 className="text-2xl font-black text-gray-900 mb-2">Sign in to eduScribe</h2>
-          <p className="text-gray-500 mb-8 font-medium">Click below to enter the platform instantly.</p>
+          <h2 className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">Sign in to eduScribe</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">Click below to enter the platform instantly.</p>
 
           <div className="flex justify-center w-full">
             <GoogleLogin

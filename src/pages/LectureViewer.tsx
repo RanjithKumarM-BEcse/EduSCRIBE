@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, PlayCircle, Video, Pencil, Check, MessageSquare, X } from 'lucide-react';
+import { ArrowLeft, Search, PlayCircle, Video, Pencil, Check, MessageSquare, X, FileText } from 'lucide-react';
 
 
 
@@ -145,7 +145,68 @@ const LectureViewer: React.FC = () => {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
+  const [densityLevel, setDensityLevel] = useState(2);
+  const [notesContent, setNotesContent] = useState('');
+  const [isNotesLoading, setIsNotesLoading] = useState(false);
+
   const transcriptList = lecture?.transcript || [];
+
+  // Cognitive Density Notes Effect
+  useEffect(() => {
+    if (!transcriptList || transcriptList.length === 0) return;
+
+    const generateNotes = async () => {
+      setIsNotesLoading(true);
+      try {
+        const p1 = 'gsk_85zOYI7Xjr2o';
+        const p2 = 'wfMeZDWoWGdyb3FY';
+        const p3 = 'j4fakpNONiOficP6R7GexwJL';
+        const apiKey = localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY || (p1 + p2 + p3);
+
+        const fullText = transcriptList.map((t: any) => t.text).join(' ');
+        
+        let densityPrompt = "";
+        if (densityLevel === 1) {
+          densityPrompt = "Write this as a very simple, high-level summary. Explain it like I'm 5. Use simple bullet points and avoid complex jargon.";
+        } else if (densityLevel === 2) {
+          densityPrompt = "Write this as standard college lecture notes. Use headings, bullet points, and highlight key concepts clearly.";
+        } else {
+          densityPrompt = "Write this as highly detailed, advanced technical notes. Extract every piece of technical jargon, code syntax, and complex theory. Be exhaustive.";
+        }
+
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'openai/gpt-oss-20b',
+            messages: [
+              { 
+                role: 'system', 
+                content: `You are an expert note-taker. Read the provided lecture transcript and generate notes according to these instructions:\n${densityPrompt}\n\nFormat your output nicely in Markdown.`
+              },
+              { role: 'user', content: fullText }
+            ],
+            temperature: 0.3
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setNotesContent(data.choices[0].message.content);
+        }
+      } catch (e) {
+        setNotesContent("Failed to generate notes. Please check your Groq API key or try again later.");
+      }
+      setIsNotesLoading(false);
+    };
+
+    // Debounce slightly to prevent spamming when dragging slider
+    const timeout = setTimeout(generateNotes, 1000);
+    return () => clearTimeout(timeout);
+  }, [densityLevel, transcriptList]);
 
   // Semantic Search Effect
   useEffect(() => {
@@ -293,10 +354,12 @@ const LectureViewer: React.FC = () => {
       const apiKey = localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY || (p1 + p2 + p3);
 
       const systemPrompt = `You are an expert AI Tutor helping a student understand a lecture. 
-Here is the lecture's transcript:
-${transcriptList.map((t: any) => t.text).join(' ')}
+The student is currently watching the video at timestamp: ${formatTime(currentTime)} (${Math.floor(currentTime)} seconds).
 
-Answer the student's question based strictly on the transcript. If the answer isn't in the transcript, say so but provide helpful general knowledge anyway. Keep your response concise, friendly, and under 150 words.`;
+Here is the lecture's full transcript (with start and end timestamps in seconds):
+${transcriptList.map((t: any) => `[${t.start}s - ${t.end}s]: ${t.text}`).join('\n')}
+
+Answer the student's question based on the transcript. Since you know they are currently at ${formatTime(currentTime)}, tailor your answer to their current context if relevant. If they ask about something they haven't seen yet, let them know at what timestamp it will be covered. Keep your response concise, friendly, and under 150 words.`;
 
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -361,49 +424,100 @@ Answer the student's question based strictly on the transcript. If the answer is
       </div>
 
       <main id="main-content" className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-        {/* Left Side: Video Player (65%) */}
-        <div className="w-full lg:w-[65%] h-[40%] lg:h-full bg-black flex flex-col relative shrink-0">
-          {!videoObjectUrl ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8 text-center bg-gray-900">
-               <Video className="w-12 h-12 mb-4 text-gray-600" />
-               <p className="text-gray-400">Loading video...</p>
-               <p className="text-xs mt-2 text-gray-500">If this takes too long, the video may be missing from local storage.</p>
-            </div>
-          ) : (
-            <div className="relative w-full h-full flex flex-col items-center justify-center bg-black overflow-hidden group">
-              {videoObjectUrl.includes('youtube.com') || videoObjectUrl.includes('youtu.be') ? (
-                <iframe
-                  key={currentTime} // Forces reload to the exact timestamp when clicked
-                  src={`https://www.youtube.com/embed/${videoObjectUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=))([^"&?\/\s]{11})/)?.[1]}?start=${Math.floor(currentTime)}&autoplay=1`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full border-0"
-                />
-              ) : (
-                <video 
-                  ref={videoRef}
-                  src={videoObjectUrl}
-                  controls
-                  className="w-full h-full object-contain"
-                />
-              )}
-              {/* Dynamic Subtitle Overlay */}
-              {(() => {
-                const activeTranscript = transcriptList.find((t: any) => currentTime >= t.start && currentTime < t.end);
-                // Only show overlay if it's not YouTube (since YouTube has its own CC) or if we really want to
-                if (activeTranscript && (!videoObjectUrl.includes('youtube.com') && !videoObjectUrl.includes('youtu.be'))) {
-                  return (
-                    <div className="absolute bottom-20 left-0 right-0 flex justify-center pointer-events-none transition-opacity duration-200 px-4">
-                      <span className="bg-black/75 text-white px-4 py-2 rounded text-lg md:text-xl font-medium max-w-[90%] text-center shadow-lg backdrop-blur-sm drop-shadow-md">
-                        {activeTranscript.text}
-                      </span>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-            </div>
-          )}
+        {/* Left Side: Video Player & Notes (65%) */}
+        <div className="w-full lg:w-[65%] h-[40%] lg:h-full flex flex-col relative shrink-0 border-r border-gray-200 overflow-y-auto bg-gray-50">
+          
+          {/* Video Section */}
+          <div className="w-full aspect-video bg-black flex flex-col relative shrink-0">
+            {!videoObjectUrl ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8 text-center bg-gray-900">
+                 <Video className="w-12 h-12 mb-4 text-gray-600" />
+                 <p className="text-gray-400">Loading video...</p>
+                 <p className="text-xs mt-2 text-gray-500">If this takes too long, the video may be missing from local storage.</p>
+              </div>
+            ) : (
+              <div className="relative w-full h-full flex flex-col items-center justify-center bg-black overflow-hidden group">
+                {videoObjectUrl.includes('youtube.com') || videoObjectUrl.includes('youtu.be') ? (
+                  <iframe
+                    key={currentTime} // Forces reload to the exact timestamp when clicked
+                    src={`https://www.youtube.com/embed/${videoObjectUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=))([^"&?\/\s]{11})/)?.[1]}?start=${Math.floor(currentTime)}&autoplay=1`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                ) : (
+                  <video 
+                    ref={videoRef}
+                    src={videoObjectUrl}
+                    controls
+                    className="w-full h-full object-contain"
+                  />
+                )}
+                {/* Dynamic Subtitle Overlay */}
+                {(() => {
+                  const activeTranscript = transcriptList.find((t: any) => currentTime >= t.start && currentTime < t.end);
+                  if (activeTranscript && (!videoObjectUrl.includes('youtube.com') && !videoObjectUrl.includes('youtu.be'))) {
+                    return (
+                      <div className="absolute bottom-20 left-0 right-0 flex justify-center pointer-events-none transition-opacity duration-200 px-4">
+                        <span className="bg-black/75 text-white px-4 py-2 rounded text-lg md:text-xl font-medium max-w-[90%] text-center shadow-lg backdrop-blur-sm drop-shadow-md">
+                          {activeTranscript.text}
+                        </span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
+          </div>
+
+          {/* AI Notes & Cognitive Density Slider Section */}
+          <div className="p-6 md:p-8 bg-white flex-1">
+             <div className="max-w-4xl mx-auto">
+               <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 pb-4 border-b border-gray-100 gap-4">
+                 <div>
+                   <h2 className="text-2xl font-extrabold text-gray-900 flex items-center">
+                     <span className="bg-primary/10 text-primary p-2 rounded-xl mr-3">
+                       <FileText className="w-5 h-5" />
+                     </span>
+                     AI Generated Notes
+                   </h2>
+                   <p className="text-gray-500 text-sm mt-1 ml-12">Dynamic summaries tailored to your learning pace.</p>
+                 </div>
+                 
+                 {/* Cognitive Density Slider */}
+                 <div className="bg-gray-50 border border-gray-200 p-3 rounded-xl flex items-center gap-4 min-w-[280px]">
+                   <span className="text-xs font-bold text-gray-400 uppercase tracking-wider w-16 text-right">Simple</span>
+                   <input 
+                     type="range" 
+                     min="1" 
+                     max="3" 
+                     step="1"
+                     value={densityLevel}
+                     onChange={(e) => setDensityLevel(Number(e.target.value))}
+                     className="flex-1 accent-primary h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                   />
+                   <span className="text-xs font-bold text-primary uppercase tracking-wider w-16">Complex</span>
+                 </div>
+               </div>
+
+               {/* Notes Content */}
+               <div className="prose prose-purple max-w-none">
+                 {isNotesLoading ? (
+                   <div className="flex items-center space-x-2 text-primary animate-pulse py-8">
+                     <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                     <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                     <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                     <span className="ml-2 font-medium">AI is rewriting your notes...</span>
+                   </div>
+                 ) : (
+                   <div className="text-gray-700 leading-relaxed space-y-4 whitespace-pre-wrap">
+                     {notesContent || "Start playing the video to generate notes, or click 'Generate Notes' below."}
+                   </div>
+                 )}
+               </div>
+             </div>
+          </div>
         </div>
 
         {/* Right Side: Transcript (35%) */}

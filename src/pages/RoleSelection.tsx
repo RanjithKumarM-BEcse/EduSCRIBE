@@ -42,7 +42,7 @@ const RoleSelection: React.FC = () => {
          </div>
          <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-full border border-gray-100 dark:border-gray-700">
             <img src={user.avatar} alt="avatar" className="w-6 h-6 rounded-full" />
-            <span className="text-sm font-bold text-gray-700">{user.name}</span>
+            <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{user.name}</span>
          </div>
       </nav>
 

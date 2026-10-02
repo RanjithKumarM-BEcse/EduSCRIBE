@@ -410,7 +410,7 @@ Answer the student's question based on the transcript. Since you know they are c
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 flex items-center px-4 shrink-0 z-10">
         <button 
           onClick={() => navigate(`/classroom/${roomCode}`)} 
-          className="p-2 hover:bg-gray-100 rounded-full mr-4 text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+          className="p-2 hover:bg-gray-100 dark:bg-gray-800 rounded-full mr-4 text-gray-600 dark:text-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
           aria-label="Back to Classroom"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -431,7 +431,7 @@ Answer the student's question based on the transcript. Since you know they are c
           <div className="w-full aspect-video bg-black flex flex-col relative shrink-0">
             {!videoObjectUrl ? (
               <div className="flex-1 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 p-8 text-center bg-gray-900">
-                 <Video className="w-12 h-12 mb-4 text-gray-600" />
+                 <Video className="w-12 h-12 mb-4 text-gray-600 dark:text-gray-300" />
                  <p className="text-gray-400">Loading video...</p>
                  <p className="text-xs mt-2 text-gray-500 dark:text-gray-400">If this takes too long, the video may be missing from local storage.</p>
               </div>
@@ -495,7 +495,7 @@ Answer the student's question based on the transcript. Since you know they are c
                      step="1"
                      value={densityLevel}
                      onChange={(e) => setDensityLevel(Number(e.target.value))}
-                     className="flex-1 accent-primary h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                     className="flex-1 accent-primary h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
                    />
                    <span className="text-xs font-bold text-primary uppercase tracking-wider w-16">Complex</span>
                  </div>
@@ -511,7 +511,7 @@ Answer the student's question based on the transcript. Since you know they are c
                      <span className="ml-2 font-medium">AI is rewriting your notes...</span>
                    </div>
                  ) : (
-                   <div className="text-gray-700 leading-relaxed space-y-4 whitespace-pre-wrap">
+                   <div className="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4 whitespace-pre-wrap">
                      {notesContent || "Start playing the video to generate notes, or click 'Generate Notes' below."}
                    </div>
                  )}
@@ -531,21 +531,21 @@ Answer the student's question based on the transcript. Since you know they are c
                 AI Transcript
               </h2>
               <div 
-                className="flex bg-gray-200 p-0.5 rounded-lg" 
+                className="flex bg-gray-200 dark:bg-gray-700 p-0.5 rounded-lg" 
                 role="group" 
                 aria-label="Search Mode"
               >
                 <button 
                   onClick={() => setSearchMode('exact')}
                   aria-pressed={searchMode === 'exact'}
-                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-primary ${searchMode === 'exact' ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
+                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-primary ${searchMode === 'exact' ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'}`}
                 >
                   Exact
                 </button>
                 <button 
                   onClick={() => setSearchMode('semantic')}
                   aria-pressed={searchMode === 'semantic'}
-                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-primary ${searchMode === 'semantic' ? 'bg-primary text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
+                  className={`text-xs font-bold px-3 py-1 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-primary ${searchMode === 'semantic' ? 'bg-primary text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'}`}
                 >
                   Semantic
                 </button>
@@ -568,7 +568,7 @@ Answer the student's question based on the transcript. Since you know they are c
                 aria-label={searchMode === 'semantic' ? "Semantic Search Input" : "Exact Search Input"}
                 className={`w-full pl-10 pr-4 py-2 rounded-xl border outline-none transition-all text-sm ${
                   searchMode === 'semantic' 
-                    ? 'border-purple-200 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-purple-50/30' 
+                    ? 'border-purple-200 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-purple-50 dark:bg-primary/20/30' 
                     : 'border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20'
                 }`}
               />
@@ -593,9 +593,9 @@ Answer the student's question based on the transcript. Since you know they are c
                   id={`transcript-block-${originalIndex}`}
                   className={`p-3 rounded-xl transition-all border-l-4 group focus-within:ring-2 focus-within:ring-primary ${
                     isActive 
-                      ? 'bg-purple-50 border-primary shadow-sm' 
+                      ? 'bg-purple-50 dark:bg-primary/20 border-primary shadow-sm' 
                       : isSemanticMatch
-                      ? 'bg-yellow-50 border-yellow-400 shadow-sm'
+                      ? 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400 shadow-sm'
                       : 'bg-white dark:bg-gray-800 border-transparent hover:bg-gray-50 dark:bg-gray-900'
                   }`}
                 >
@@ -619,7 +619,7 @@ Answer the student's question based on the transcript. Since you know they are c
                           <div className="flex justify-end space-x-2">
                             <button 
                               onClick={() => setEditingIndex(null)}
-                              className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 rounded-md transition-colors"
+                              className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-md transition-colors"
                             >
                               Cancel
                             </button>
@@ -638,7 +638,7 @@ Answer the student's question based on the transcript. Since you know they are c
                             tabIndex={0}
                             onClick={() => handleTranscriptClick(item.start)}
                             onKeyDown={(e) => e.key === 'Enter' && handleTranscriptClick(item.start)}
-                            className={`text-sm leading-relaxed cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded p-1 -ml-1 ${isActive ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-600'}`}
+                            className={`text-sm leading-relaxed cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded p-1 -ml-1 ${isActive ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-600 dark:text-gray-300'}`}
                           >
                             {item.text}
                           </p>
@@ -697,7 +697,7 @@ Answer the student's question based on the transcript. Since you know they are c
                 <div className={`max-w-[85%] rounded-2xl px-4 py-2 shadow-sm ${
                   msg.role === 'user' 
                     ? 'bg-primary text-white rounded-br-none' 
-                    : 'bg-white dark:bg-gray-800 text-gray-800 border border-gray-100 dark:border-gray-700 rounded-bl-none'
+                    : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-700 rounded-bl-none'
                 }`}>
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 </div>
@@ -705,7 +705,7 @@ Answer the student's question based on the transcript. Since you know they are c
             ))}
             {isChatLoading && (
               <div className="flex justify-start">
-                <div className="max-w-[85%] rounded-2xl rounded-bl-none px-4 py-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 flex items-center space-x-2 shadow-sm">
+                <div className="max-w-[85%] rounded-2xl rounded-bl-none px-4 py-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200 flex items-center space-x-2 shadow-sm">
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
@@ -740,7 +740,7 @@ Answer the student's question based on the transcript. Since you know they are c
       {/* Floating Action Button (FAB) */}
       {!isChatOpen && (
         <div className="fixed bottom-6 right-6 flex flex-col items-center space-y-2 z-50">
-          <span className="bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-md text-xs font-bold text-gray-700 animate-pulse border border-gray-100 dark:border-gray-700">
+          <span className="bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-md text-xs font-bold text-gray-700 dark:text-gray-300 animate-pulse border border-gray-100 dark:border-gray-700">
             Chat Bot
           </span>
           <button

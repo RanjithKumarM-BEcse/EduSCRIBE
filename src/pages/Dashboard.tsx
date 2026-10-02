@@ -137,12 +137,12 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div 
                 onClick={() => setIsProfileOpen(true)}
-                className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-full border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
+                className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-full border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                 title="Edit Profile"
               >
                 <img src={user?.avatar} alt="avatar" className="w-8 h-8 rounded-full border-2 border-primary/20" />
                 <div className="hidden sm:flex flex-col pr-2">
-                  <span className="text-sm font-bold text-gray-700 leading-tight">{user?.name}</span>
+                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300 leading-tight">{user?.name}</span>
                   {user?.organization && (
                     <span className="text-[10px] font-semibold text-primary/70 uppercase tracking-wider leading-tight">{user.organization}</span>
                   )}
@@ -175,7 +175,7 @@ const Dashboard: React.FC = () => {
 
         {!isStaff && (
           <div className="mb-10 w-full max-w-2xl">
-            <h3 className="text-sm font-bold text-gray-700 mb-2">Join a Classroom</h3>
+            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Join a Classroom</h3>
             <div className="flex space-x-2">
               <input 
                 type="text" 
@@ -219,7 +219,7 @@ const Dashboard: React.FC = () => {
               aria-label={`Open class: ${cls.name}`}
               className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-primary shadow-sm overflow-hidden cursor-pointer group hover:-translate-y-1 transition-all focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <div className="h-32 bg-gray-100 relative w-full flex items-center justify-center overflow-hidden">
+              <div className="h-32 bg-gray-100 dark:bg-gray-800 relative w-full flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20"></div>
                 <Video className="w-10 h-10 text-white opacity-50 z-10" />
               </div>
@@ -259,7 +259,7 @@ const Dashboard: React.FC = () => {
               <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-sm mb-3 text-gray-400">
                 <Plus className="w-6 h-6" />
               </div>
-              <span className="font-bold text-gray-600">Create new class</span>
+              <span className="font-bold text-gray-600 dark:text-gray-300">Create new class</span>
             </div>
           )}
         </div>

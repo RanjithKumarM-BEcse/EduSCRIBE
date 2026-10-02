@@ -180,7 +180,7 @@ const ClassroomView: React.FC = () => {
          <div className="flex items-center space-x-4">
             <button 
               onClick={() => navigate('/dashboard')}
-              className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1"
+              className="text-gray-400 hover:text-gray-600 dark:text-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1"
               aria-label="Back to Dashboard"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -192,11 +192,11 @@ const ClassroomView: React.FC = () => {
                <span className="font-bold text-xl text-gray-900 dark:text-gray-100">eduScribe</span>
             </div>
             <span className="text-gray-300 font-light text-xl px-2">/</span>
-            <span className="font-bold text-gray-700">{roomData?.name || 'Classroom'}</span>
+            <span className="font-bold text-gray-700 dark:text-gray-300">{roomData?.name || 'Classroom'}</span>
          </div>
          <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-full border border-gray-100 dark:border-gray-700">
             <img src={user?.avatar} alt="avatar" className="w-6 h-6 rounded-full" />
-            <span className="text-sm font-bold text-gray-700">{user?.name}</span>
+            <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{user?.name}</span>
          </div>
       </nav>
 
@@ -233,7 +233,7 @@ const ClassroomView: React.FC = () => {
               lectures.map(lecture => (
                 <div key={lecture.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-primary/30 rounded-2xl p-4 flex items-center justify-between transition-all group">
                    <div className="flex items-center space-x-4">
-                      <div className="w-24 h-16 bg-gray-100 rounded-lg relative overflow-hidden flex items-center justify-center">
+                      <div className="w-24 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg relative overflow-hidden flex items-center justify-center">
                          <Video className="w-6 h-6 text-gray-300" />
                       </div>
                       <div>
